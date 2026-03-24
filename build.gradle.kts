@@ -33,8 +33,30 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 	implementation("org.springframework:spring-jdbc")
+    //rate limiting
+    implementation("com.bucket4j:bucket4j-core:8.7.0")
+    //libphone
+    implementation("com.googlecode.libphonenumber:libphonenumber:8.13.38")
+    // crypto
+    implementation("org.springframework.security:spring-security-crypto")
+    //websocket
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    //twilio
+    implementation("com.twilio.sdk:twilio:9.2.1")
+    //patch vulnerabilities dependencies
+    implementation("commons-io:commons-io:2.21.0")
+    implementation("org.json:json:20251224")
+    implementation("com.ongres.scram:scram-common:3.2")
+    implementation("io.netty:netty-codec-http2:4.2.9.Final")
+    implementation("io.grpc:grpc-netty-shaded:1.78.0")
 	implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
 	implementation("tools.jackson.module:jackson-module-kotlin")
+    implementation("io.r2dbc:r2dbc-pool:1.0.2.RELEASE")
+    implementation("org.postgresql:r2dbc-postgresql:1.1.1.RELEASE")
+    // jwt
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 	runtimeOnly("org.postgresql:postgresql")
 	runtimeOnly("org.postgresql:r2dbc-postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-r2dbc-test")
