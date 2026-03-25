@@ -6,7 +6,7 @@ plugins {
     id("io.sentry.jvm.gradle") version "6.0.0"
 }
 
-group = "emy.backend"
+group = "initializer.backend"
 version = "0.0.1-SNAPSHOT"
 sentry {
     includeSourceContext = true
