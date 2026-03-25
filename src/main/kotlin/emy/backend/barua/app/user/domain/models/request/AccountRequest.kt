@@ -1,4 +1,4 @@
-package server.web.casa.app.user.domain.model.request
+package emy.backend.barua.app.user.domain.models.request
 
 import jakarta.validation.constraints.NotNull
 

@@ -1,6 +1,7 @@
-package server.web.casa.app.user.domain.model
+package emy.backend.barua.app.user.domain.models
 
-import server.web.casa.app.user.infrastructure.persistence.entity.AccountUserEntity
+import emy.backend.barua.app.user.infrastructure.entities.AccountUserEntity
+
 
 data class AccountUser(
     val id: Long? = null,

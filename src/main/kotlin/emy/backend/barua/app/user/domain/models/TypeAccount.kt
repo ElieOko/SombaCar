@@ -1,4 +1,4 @@
-package server.web.casa.app.user.domain.model
+package emy.backend.barua.app.user.domain.models
 
 data class TypeAccount(
     val typeAccountId: Long? = null,
