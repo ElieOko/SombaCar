@@ -3,11 +3,17 @@ plugins {
 	kotlin("plugin.spring") version "2.2.21"
 	id("org.springframework.boot") version "4.0.4"
 	id("io.spring.dependency-management") version "1.1.7"
+    id("io.sentry.jvm.gradle") version "6.0.0"
 }
 
 group = "emy.backend"
 version = "0.0.1-SNAPSHOT"
-
+sentry {
+    includeSourceContext = true
+    org = "casanayo"
+    projectName = "barua-app"
+    authToken = System.getenv("SENTRY_AUTH_TOKEN_")
+}
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(17)
@@ -18,6 +24,9 @@ repositories {
 	mavenCentral()
 }
 
+extra["springCloudGcpVersion"] = "7.3.1"
+extra["springCloudVersion"] = "2025.0.0"
+extra["sentryVersion"] = "8.27.0"
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
@@ -33,6 +42,8 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 	implementation("org.springframework:spring-jdbc")
+    // @sentry
+    implementation("io.sentry:sentry:8.31.0")
     //rate limiting
     implementation("com.bucket4j:bucket4j-core:8.7.0")
     //libphone
@@ -41,6 +52,8 @@ dependencies {
     implementation("org.springframework.security:spring-security-crypto")
     //websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+    //gcs
+    implementation("com.google.cloud:spring-cloud-gcp-starter-storage")
     //twilio
     implementation("com.twilio.sdk:twilio:9.2.1")
     //patch vulnerabilities dependencies
@@ -53,6 +66,8 @@ dependencies {
 	implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("io.r2dbc:r2dbc-pool:1.0.2.RELEASE")
     implementation("org.postgresql:r2dbc-postgresql:1.1.1.RELEASE")
+    // swagger
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
     // jwt
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
@@ -72,7 +87,13 @@ dependencies {
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
-
+dependencyManagement {
+    imports {
+        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${property("springCloudGcpVersion")}")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+//		mavenBom("io.sentry:sentry-bom:${property("sentryVersion")}")
+    }
+}
 kotlin {
 	compilerOptions {
 		freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
