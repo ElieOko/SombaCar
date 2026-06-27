@@ -10,7 +10,7 @@ import java.util.UUID
 //}
 
 fun generateTransactionReference(): String {
-    val prefix = "CasaNayo"
+    val prefix = "CarNayo"
     val input = UUID.randomUUID().toString() + System.nanoTime()
     val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
     val hash = bytes.joinToString("") { "%02x".format(it) }

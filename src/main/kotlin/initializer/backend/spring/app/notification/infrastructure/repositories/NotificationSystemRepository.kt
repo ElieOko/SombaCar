@@ -1,0 +1,6 @@
+package initializer.backend.spring.app.notification.infrastructure.repositories
+
+import initializer.backend.spring.app.notification.infrastructure.entities.NotificationSystemEntity
+import org.springframework.data.repository.kotlin.CoroutineCrudRepository
+
+interface NotificationSystemRepository : CoroutineCrudRepository<NotificationSystemEntity, Long>

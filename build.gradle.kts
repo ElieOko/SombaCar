@@ -10,9 +10,10 @@ group = "initializer.backend"
 version = "0.0.1-SNAPSHOT"
 sentry {
     includeSourceContext = true
-    org = "casanayo"
-    projectName = "barua-app"
-    authToken = System.getenv("SENTRY_AUTH_TOKEN_")
+	org = "casanayo"
+	projectName = "sombacar"
+	//System.getenv("SENTRY_AUTH_TOKEN_SOMBA")
+    authToken = "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"
 }
 java {
 	toolchain {
