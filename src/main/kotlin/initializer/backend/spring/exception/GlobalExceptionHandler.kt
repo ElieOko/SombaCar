@@ -1,6 +1,5 @@
 package initializer.backend.spring.exception
 
-import com.google.api.gax.rpc.NotFoundException
 import initializer.backend.spring.utils.Mode
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
@@ -35,20 +34,20 @@ class GlobalExceptionHandler {
             .status(HttpStatus.NOT_FOUND)
             .body(map)
     }
-
-    @ExceptionHandler(value = [NotFoundException::class])
-    fun handleEntityNotFound(e: NotFoundException): ResponseEntity<ErrorResponseDto>{
-        logger.error("Handle entityNotFoundException", e);
-        val errorDto = ErrorResponseDto(
-            "Entity not found",
-            e.message.toString(),
-            LocalDateTime.now()
-        )
-
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body(errorDto)
-    }
+//
+//    @ExceptionHandler(value = [NotFoundException::class])
+//    fun handleEntityNotFound(e: NotFoundException): ResponseEntity<ErrorResponseDto>{
+//        logger.error("Handle entityNotFoundException", e);
+//        val errorDto = ErrorResponseDto(
+//            "Entity not found",
+//            e.message.toString(),
+//            LocalDateTime.now()
+//        )
+//
+//        return ResponseEntity
+//            .status(HttpStatus.NOT_FOUND)
+//            .body(errorDto)
+//    }
 
     @ExceptionHandler(value = [
         IllegalArgumentException::class,

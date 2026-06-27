@@ -54,7 +54,7 @@ dependencies {
     //websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     //gcs
-    implementation("com.google.cloud:spring-cloud-gcp-starter-storage")
+//    implementation("com.google.cloud:spring-cloud-gcp-starter-storage")
     //twilio
     implementation("com.twilio.sdk:twilio:9.2.1")
     //patch vulnerabilities dependencies
@@ -90,8 +90,8 @@ dependencies {
 }
 dependencyManagement {
     imports {
-        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${property("springCloudGcpVersion")}")
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+//        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${property("springCloudGcpVersion")}")
+//        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
 //		mavenBom("io.sentry:sentry-bom:${property("sentryVersion")}")
     }
 }

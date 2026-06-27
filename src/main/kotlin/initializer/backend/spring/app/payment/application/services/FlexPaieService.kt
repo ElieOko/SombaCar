@@ -17,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import reactor.core.publisher.Mono
 
+/*
 @Service
 @Profile(Mode.DEV)
 class FlexPaieService(
@@ -64,3 +65,4 @@ class FlexPaieService(
             .awaitBody()
     }
 }
+*/

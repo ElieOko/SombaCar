@@ -6,13 +6,13 @@ import org.springframework.stereotype.Service
 
 @Service
 class NotificationDispatchService(
-    private val messagingTemplate: SimpMessagingTemplate
+//    private val messagingTemplate: SimpMessagingTemplate
 ) {
     fun sendNotificationAll(message: Notification) {
-        messagingTemplate.convertAndSend("/topic/notifications", message)
+//        messagingTemplate.convertAndSend("/topic/notifications", message)
     }
 
     fun sendNotificationToUser(username: String, message: Notification) {
-        messagingTemplate.convertAndSendToUser(username, "/queue/notifications", message)
+///        messagingTemplate.convertAndSendToUser(username, "/queue/notifications", message)
     }
 }
