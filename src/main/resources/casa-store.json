@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "casanayo",
+  "private_key_id": "51dea2af1a26600ac16d807d8735d7c161e7509a",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDofj72BuVNSIqr\nQkd7LwanFeZGj+1eiRxNP/vNCRez27F9deg1iHeh0kZaimQp8W2UO7lYl0FdmFhQ\nIIE4i6Xlu6zg+k5MJKPED40G7tK1s9vKjMDV2uITJyCxB1Mfrmq/+hdOSmsvWpPr\nIk23HEmhvk0qwXY66CHkcfEhquROqrTEvCWKNGXOeOsDlbBpvM5I9sPSYufqtUiE\nVt8dO6CTAM+Ktg/80J4DMMicVXeZEz2nZcTesxeG1CqLQvcXVju8qJf6lATWJS7P\nXZV76uLiXbDP2g3DxhX8JsHJs2YUxoHSohBI3yYKYK5uvqwjdeHVbaz1tMQiXGxF\njkxWvHZvAgMBAAECggEABEo9rJODzESTTnkXUZLhRNidTasFOCvZtyRmZ8OlsAUI\nEuauK++CaZy0MKKCGgxuHbPQBgfDrIL0CjjduY0WH0jMKVox2XgJnF0/GHD0UWcD\nhL3987qpiXnwDmQyTypypmudqq1D3UIghAO3h5jAuqvRlIFKYBuwpTYwoV+1lvmV\nZpbkucGcbXsUXE5TP10MqsU/teD7awS4dQVdqamqVH4lfkBaRKbAb9EvkHqT36wl\nZwQZv4t+IR44mcqnrBbvkRKvRdI0XXP55oXnpm/ssLadjsiOaEFy48P6iJ9AxtmY\nqu32sH5lo9QvHvvH8wpQTSAMc0izo+4P5+vnbw2crQKBgQD99/1SfgoQaXCretXe\n36aBjj6aIInbxzfemsbYkl/57wH4pzN+xvZMJUOibm0qlhdmHCFlrhROtNy8oBz/\nbTZsEfkBpkhagFFSgk2hEXK8q4qqlGLrWosnQrtCJPojyPEIU3Qoxa8DUQaXfGh+\nsC1W35ovv83UiYYN6WEsbg82vQKBgQDqWkjNcsPbRVcdutwnIREmLQezKX+F8k42\nH5/B/YE9DqFLndUPSy/uSxICPcvxrUPi5hUmmEcLE+XrHGW8qAbcpEK/DsfODoq7\nBelIvtAk5MVgVDWTPaF877nNzN0JCF+EAy8rpOneIU8icsqUlR6j2Nsi6q05LLmy\no24PbVW6mwKBgQCw/efcWpxW7bSovRVZmpHmziQQs8Z/lSn5h/I2MmSSwR+lk5jO\nrIgvbvTguYZ43Fr4PXiE7TmX1HHVPtyWoh0AWdIodSMNd0m1b7v8GTXWCNK9qGX7\n0YES3m20XiK5V6uq+sYEOCiM7iXi4r/MMqmWVoSU7F3c1e7HuTKQjS8rHQKBgB80\n7JLnIGuXfTVJR72yKo1x25+g/AlDLeUJKwXzEv2lcBcYqmGB+pz5xCkmP30sPGj/\niHt+NZ+lA63eNzH7EgbZnMXCWxr2VsT20YzNU/xFtn7QV94Gi/WOGqjsCdcFFWsH\n3YUrTbU1rEsDDDTi8pSQ8QViSLTfXs8J8kL9pTfXAoGBAMT2d6FRC5IzPCMhtx/2\naNWGCk/NIOkorq3CcogF2fKC6/G42jAPcuAQaMg+LB7ZnN35H9MKfGUIHmdQVWUr\nV1GS9nts+ZV3I8yahM5ScsGBdaq4qp3HFVZGsM2kDqh/0575Cpj7ezm9XVzezrhg\n3cAabCtVV8JziQjGwrApDxW1\n-----END PRIVATE KEY-----\n",
+  "client_email": "casanayo-700@casanayo.iam.gserviceaccount.com",
+  "client_id": "118318050551078295759",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/casanayo-700%40casanayo.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

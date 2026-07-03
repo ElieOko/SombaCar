@@ -6,12 +6,12 @@ plugins {
     id("io.sentry.jvm.gradle") version "6.0.0"
 }
 
-group = "initializer.backend"
+group = "vehnixauto.server"
 version = "0.0.1-SNAPSHOT"
 sentry {
     includeSourceContext = true
 	org = "casanayo"
-	projectName = "sombacar"
+	projectName = "vehnixauto"
 	//System.getenv("SENTRY_AUTH_TOKEN_SOMBA")
     authToken = "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"
 }
@@ -43,6 +43,8 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 	implementation("org.springframework:spring-jdbc")
+	// Redis
+	implementation("org.springframework.boot:spring-boot-starter-session-data-redis")
     // @sentry
     implementation("io.sentry:sentry:8.31.0")
     //rate limiting
@@ -54,9 +56,13 @@ dependencies {
     //websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     //gcs
-//    implementation("com.google.cloud:spring-cloud-gcp-starter-storage")
+    implementation("com.google.cloud:spring-cloud-gcp-starter-storage")
     //twilio
-    implementation("com.twilio.sdk:twilio:9.2.1")
+	implementation("com.twilio.sdk:twilio:9.2.1") {
+		exclude(group = "io.jsonwebtoken", module = "jjwt-api")
+		exclude(group = "io.jsonwebtoken", module = "jjwt-impl")
+		exclude(group = "io.jsonwebtoken", module = "jjwt-jackson")
+	}
     //patch vulnerabilities dependencies
     implementation("commons-io:commons-io:2.21.0")
     implementation("org.json:json:20251224")
@@ -71,10 +77,17 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
     // jwt
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 	runtimeOnly("org.postgresql:postgresql")
 	runtimeOnly("org.postgresql:r2dbc-postgresql")
+	// sender mail
+	implementation("org.springframework.boot:spring-boot-starter-mail")
+	// redis
+	testImplementation("org.springframework.boot:spring-boot-starter-session-data-redis-test")
+	// TEST MAIL
+	testImplementation("org.springframework.boot:spring-boot-starter-mail-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-r2dbc-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-quartz-test")
@@ -90,8 +103,8 @@ dependencies {
 }
 dependencyManagement {
     imports {
-//        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${property("springCloudGcpVersion")}")
-//        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${property("springCloudGcpVersion")}")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
 //		mavenBom("io.sentry:sentry-bom:${property("sentryVersion")}")
     }
 }

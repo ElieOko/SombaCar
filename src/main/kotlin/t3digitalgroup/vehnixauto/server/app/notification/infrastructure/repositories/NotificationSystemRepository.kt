@@ -1,0 +1,6 @@
+package t3digitalgroup.vehnixauto.server.app.notification.infrastructure.repositories
+
+import org.springframework.data.repository.kotlin.CoroutineCrudRepository
+import t3digitalgroup.vehnixauto.server.app.notification.infrastructure.entities.NotificationSystemEntity
+
+interface NotificationSystemRepository : CoroutineCrudRepository<NotificationSystemEntity, Long>

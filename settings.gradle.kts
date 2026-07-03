@@ -1,1 +1,1 @@
-rootProject.name = "carNayo"
+rootProject.name = "VehnixAuto"
