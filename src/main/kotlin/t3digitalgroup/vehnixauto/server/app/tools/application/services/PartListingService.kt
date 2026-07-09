@@ -1,6 +1,7 @@
 package t3digitalgroup.vehnixauto.server.app.tools.application.services
 
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -18,7 +19,8 @@ import java.time.LocalDateTime
 @Service
 @Profile(Mode.DEV)
 class PartListingService(
-    private val repository: PartListingRepository
+    private val repository: PartListingRepository,
+    private val partImageService: PartImageService,
 ) {
     suspend fun create(request: PartListingRequest): PartListing {
         validateListingRequest(request)
@@ -42,23 +44,46 @@ class PartListingService(
     }
 
     suspend fun findById(id: Long): PartListing {
-        return repository.findById(id)?.toDomain()
+        val listing = repository.findById(id)?.toDomain()
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Pièce introuvable.")
+        return enrichListings(listOf(listing)).first()
     }
 
-    suspend fun findByUserId(userId: Long) = repository.findByUserId(userId).map { it.toDomain() }
+    suspend fun findByUserId(userId: Long): List<PartListing> {
+        val listings = repository.findByUserId(userId).map { it.toDomain() }.toList()
+        return enrichListings(listings)
+    }
 
-    suspend fun findByListingType(listingType: ListingType) =
-        repository.findActiveByListingType(listingType.name).map { it.toDomain() }
+    suspend fun findByListingType(listingType: ListingType): List<PartListing> {
+        val listings = repository.findActiveByListingType(listingType.name).map { it.toDomain() }.toList()
+        return enrichListings(listings)
+    }
 
-    suspend fun search(query: String) = repository.searchActive(query).map { it.toDomain() }
+    suspend fun search(query: String): List<PartListing> {
+        val listings = repository.searchActive(query).map { it.toDomain() }.toList()
+        return enrichListings(listings)
+    }
 
     suspend fun updateStatus(partListingId: Long, status: ListingStatus): PartListing {
         val entity = repository.findById(partListingId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Pièce introuvable.")
         entity.status = status.name
         entity.updatedAt = LocalDateTime.now()
-        return repository.save(entity).toDomain()
+        val saved = repository.save(entity).toDomain()
+        return enrichListings(listOf(saved)).first()
+    }
+
+    private suspend fun enrichListings(listings: List<PartListing>): List<PartListing> {
+        if (listings.isEmpty()) return listings
+        val ids = listings.mapNotNull { it.partListingId }
+        if (ids.isEmpty()) return listings
+
+        val imagesByPartId = partImageService.findByPartListingIdIn(ids)
+            .groupBy { it.partListingId }
+
+        return listings.map { listing ->
+            listing.copy(images = imagesByPartId[listing.partListingId].orEmpty())
+        }
     }
 
     private fun validateListingRequest(request: PartListingRequest) {

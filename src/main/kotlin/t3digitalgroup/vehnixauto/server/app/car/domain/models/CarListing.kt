@@ -26,5 +26,7 @@ data class CarListing(
     val status: String = ListingStatus.ACTIVE.name,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now(),
-    val carModel: CarModel? = null
+    val carModel: CarModel? = null,
+    val images: List<CarImage> = emptyList(),
+    val documents: List<CarDocument>? = null,
 )

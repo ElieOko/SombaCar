@@ -1,7 +1,7 @@
 package t3digitalgroup.vehnixauto.server.app.car.application.services
 
-
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -17,7 +17,9 @@ import java.time.LocalDateTime
 @Profile(Mode.DEV)
 class CarListingService(
     private val listingRepository: CarListingRepository,
-    private val carModelRepository: CarModelRepository
+    private val carModelRepository: CarModelRepository,
+    private val carImageService: CarImageService,
+    private val carDocumentService: CarDocumentService,
 ) {
     suspend fun create(request: CarListingRequest): CarListing {
         validateListingRequest(request)
@@ -43,46 +45,93 @@ class CarListingService(
             country = request.country
         ).toEntity()
 
-        return listingRepository.save(entity).toDomain(carModel.toDomain())
+        val saved = listingRepository.save(entity)
+        saved.listingId?.let { listingId ->
+            request.documentIds?.takeIf { it.isNotEmpty() }?.let { documentIds ->
+                carDocumentService.linkDocuments(listingId, documentIds)
+            }
+        }
+        return enrichListings(
+            listOf(saved.toDomain(carModel.toDomain())),
+            includeDocuments = !request.documentIds.isNullOrEmpty(),
+        ).first()
     }
 
-    suspend fun findById(id: Long): CarListing {
+    suspend fun findById(id: Long, includeDocuments: Boolean = false): CarListing {
         val listing = listingRepository.findById(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
         val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
-        return listing.toDomain(carModel)
+        val listings = enrichListings(listOf(listing.toDomain(carModel)), includeDocuments)
+        return listings.first()
     }
 
-    suspend fun findByUserId(userId: Long) = listingRepository.findByUserId(userId).map { listing ->
-        val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
-        listing.toDomain(carModel)
+    suspend fun findByUserId(userId: Long, includeDocuments: Boolean = false): List<CarListing> {
+        val listings = listingRepository.findByUserId(userId).map { listing ->
+            val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
+            listing.toDomain(carModel)
+        }.toList()
+        return enrichListings(listings, includeDocuments)
     }
 
-    suspend fun findByListingType(listingType: ListingType) =
-        listingRepository.findActiveByListingType(listingType.name).map { listing ->
+    suspend fun findByListingType(listingType: ListingType, includeDocuments: Boolean = false): List<CarListing> {
+        val listings = listingRepository.findActiveByListingType(listingType.name).map { listing ->
             val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
             listing.toDomain(carModel)
-        }
+        }.toList()
+        return enrichListings(listings, includeDocuments)
+    }
 
-    suspend fun findByCarModelId(carModelId: Long) =
-        listingRepository.findActiveByCarModelId(carModelId).map { listing ->
+    suspend fun findByCarModelId(carModelId: Long, includeDocuments: Boolean = false): List<CarListing> {
+        val listings = listingRepository.findActiveByCarModelId(carModelId).map { listing ->
             val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
             listing.toDomain(carModel)
-        }
+        }.toList()
+        return enrichListings(listings, includeDocuments)
+    }
 
-    suspend fun findByElectricAndCondition(isElectric: Boolean, condition: ItemCondition) =
-        listingRepository.findActiveByElectricAndCondition(isElectric, condition.name).map { listing ->
+    suspend fun findByElectricAndCondition(
+        isElectric: Boolean,
+        condition: ItemCondition,
+        includeDocuments: Boolean = false,
+    ): List<CarListing> {
+        val listings = listingRepository.findActiveByElectricAndCondition(isElectric, condition.name).map { listing ->
             val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
             listing.toDomain(carModel)
-        }
+        }.toList()
+        return enrichListings(listings, includeDocuments)
+    }
 
     suspend fun updateStatus(listingId: Long, status: ListingStatus): CarListing {
         val entity = listingRepository.findById(listingId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
         entity.status = status.name
         entity.updatedAt = LocalDateTime.now()
-        val carModel = carModelRepository.findById(entity.carModelId)?.toDomain()
-        return listingRepository.save(entity).toDomain(carModel)
+        val saved = listingRepository.save(entity)
+        val carModel = carModelRepository.findById(saved.carModelId)?.toDomain()
+        return enrichListings(listOf(saved.toDomain(carModel)), includeDocuments = false).first()
+    }
+
+    private suspend fun enrichListings(listings: List<CarListing>, includeDocuments: Boolean): List<CarListing> {
+        if (listings.isEmpty()) return listings
+        val ids = listings.mapNotNull { it.listingId }
+        if (ids.isEmpty()) return listings
+
+        val imagesByCarId = carImageService.findCarIdIn(ids).toList()
+            .map { it.toDomain() }
+            .groupBy { it.carId }
+
+        val documentsByCarId = if (includeDocuments) {
+            carDocumentService.findByCarIdIn(ids).groupBy { it.carId }
+        } else {
+            emptyMap()
+        }
+
+        return listings.map { listing ->
+            listing.copy(
+                images = imagesByCarId[listing.listingId].orEmpty(),
+                documents = if (includeDocuments) documentsByCarId[listing.listingId].orEmpty() else null,
+            )
+        }
     }
 
     private fun validateListingRequest(request: CarListingRequest) {

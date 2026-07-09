@@ -1,4 +1,4 @@
-package t3digitalgroup.vehnixauto.server.app.car.infrastructure.controllers
+package t3digitalgroup.vehnixauto.server.app.moto.infrastructure.controllers
 
 import tools.jackson.databind.json.JsonMapper
 import io.swagger.v3.oas.annotations.Operation
@@ -10,28 +10,29 @@ import org.springframework.context.annotation.Profile
 import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartHttpServletRequest
-import t3digitalgroup.vehnixauto.server.app.car.application.services.*
-import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.CarListingRequest
+import t3digitalgroup.vehnixauto.server.app.moto.application.services.MotoImageService
+import t3digitalgroup.vehnixauto.server.app.moto.application.services.MotoListingService
+import t3digitalgroup.vehnixauto.server.app.moto.domain.models.request.MotoListingRequest
 import t3digitalgroup.vehnixauto.server.route.GlobalRoute
-import t3digitalgroup.vehnixauto.server.route.car.CarListingScope
+import t3digitalgroup.vehnixauto.server.route.moto.MotoListingScope
 import t3digitalgroup.vehnixauto.server.security.monitoring.*
 import t3digitalgroup.vehnixauto.server.utils.*
 import t3digitalgroup.vehnixauto.server.utils.bufferMultipartFile
 
-@Tag(name = "Car Listing", description = "Gestion des annonces de voitures")
+@Tag(name = "Moto Listing", description = "Gestion des annonces de motos")
 @RestController
 @RequestMapping("${GlobalRoute.ROOT}/{version}")
 @Profile("dev")
-class CarListingController(
-    private val service: CarListingService,
-    private val carImageService: CarImageService,
+class MotoListingController(
+    private val service: MotoListingService,
+    private val motoImageService: MotoImageService,
     private val sentry: SentryService,
     private val jsonMapper: JsonMapper,
     private val validator: Validator,
 ) {
-    @Operation(summary = "Créer une annonce de voiture")
+    @Operation(summary = "Créer une annonce de moto")
     @PostMapping(
-        CarListingScope.PUBLIC,
+        MotoListingScope.PUBLIC,
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
         produces = [MediaType.APPLICATION_JSON_VALUE],
     )
@@ -47,14 +48,14 @@ class CarListingController(
             val bufferedImages = multipartRequest.getFiles("images")
                 .filter { !it.isEmpty }
                 .map(::bufferMultipartFile)
-            val car = service.create(body)
+            val moto = service.create(body)
             bufferedImages.forEach { file ->
-                carImageService.createFromFile(car.listingId!!, file)
+                motoImageService.createFromFile(moto.listingId!!, file)
             }
             ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponseWithMessage(
                     data = service.findById(
-                        car.listingId!!,
+                        moto.listingId!!,
                         includeDocuments = !body.documentIds.isNullOrEmpty(),
                     ),
                     message = "Saved ${bufferedImages.size} images",
@@ -66,16 +67,16 @@ class CarListingController(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.carlisting.create.count",
-                    distributionName = "api.carlisting.create.latency",
+                    countName = "api.motolisting.create.count",
+                    distributionName = "api.motolisting.create.latency",
                 )
             )
         }
     }
 
-    private fun parseListingRequest(listingJson: String): CarListingRequest {
+    private fun parseListingRequest(listingJson: String): MotoListingRequest {
         val body = try {
-            jsonMapper.readValue(listingJson, CarListingRequest::class.java)
+            jsonMapper.readValue(listingJson, MotoListingRequest::class.java)
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid listing JSON: ${e.message}")
         }
@@ -96,8 +97,8 @@ class CarListingController(
         throw IllegalArgumentException("Missing listing field")
     }
 
-    @Operation(summary = "Détail d'une annonce de voiture")
-    @GetMapping("${CarListingScope.PUBLIC}/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(summary = "Détail d'une annonce de moto")
+    @GetMapping("${MotoListingScope.PUBLIC}/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findById(
         request: HttpServletRequest,
         @PathVariable version: String,
@@ -113,15 +114,15 @@ class CarListingController(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.carlisting.findbyid.count",
-                    distributionName = "api.carlisting.findbyid.latency",
+                    countName = "api.motolisting.findbyid.count",
+                    distributionName = "api.motolisting.findbyid.latency",
                 )
             )
         }
     }
 
     @Operation(summary = "Annonces d'un utilisateur")
-    @GetMapping("${CarListingScope.PROTECTED}/user/{userId}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @GetMapping("${MotoListingScope.PROTECTED}/user/{userId}", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findByUserId(
         request: HttpServletRequest,
         @PathVariable version: String,
@@ -137,15 +138,15 @@ class CarListingController(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.carlisting.findbyuserid.count",
-                    distributionName = "api.carlisting.findbyuserid.latency",
+                    countName = "api.motolisting.findbyuserid.count",
+                    distributionName = "api.motolisting.findbyuserid.latency",
                 )
             )
         }
     }
 
     @Operation(summary = "Annonces par type (vente, location, échange)")
-    @GetMapping("${CarListingScope.PUBLIC}/type/{listingType}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @GetMapping("${MotoListingScope.PUBLIC}/type/{listingType}", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findByListingType(
         request: HttpServletRequest,
         @PathVariable version: String,
@@ -161,39 +162,39 @@ class CarListingController(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.carlisting.findbylistingtype.count",
-                    distributionName = "api.carlisting.findbylistingtype.latency",
+                    countName = "api.motolisting.findbylistingtype.count",
+                    distributionName = "api.motolisting.findbylistingtype.latency",
                 )
             )
         }
     }
 
-    @Operation(summary = "Annonces par modèle de voiture")
-    @GetMapping("${CarListingScope.PUBLIC}/model/{carModelId}", produces = [MediaType.APPLICATION_JSON_VALUE])
-    suspend fun findByCarModelId(
+    @Operation(summary = "Annonces par modèle de moto")
+    @GetMapping("${MotoListingScope.PUBLIC}/model/{motoModelId}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findByMotoModelId(
         request: HttpServletRequest,
         @PathVariable version: String,
-        @PathVariable carModelId: Long,
+        @PathVariable motoModelId: Long,
         @RequestParam(defaultValue = "false") includeDocuments: Boolean,
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ApiResponse(service.findByCarModelId(carModelId, includeDocuments))
+            ApiResponse(service.findByMotoModelId(motoModelId, includeDocuments))
         } finally {
             sentry.callToMetric(
                 MetricModel(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.carlisting.findbycarmodelid.count",
-                    distributionName = "api.carlisting.findbycarmodelid.latency",
+                    countName = "api.motolisting.findbymotomodelid.count",
+                    distributionName = "api.motolisting.findbymotomodelid.latency",
                 )
             )
         }
     }
 
     @Operation(summary = "Annonces par motorisation et état")
-    @GetMapping("${CarListingScope.PUBLIC}/filter", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @GetMapping("${MotoListingScope.PUBLIC}/filter", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findByElectricAndCondition(
         request: HttpServletRequest,
         @PathVariable version: String,
@@ -210,15 +211,15 @@ class CarListingController(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.carlisting.findbyelectricandcondition.count",
-                    distributionName = "api.carlisting.findbyelectricandcondition.latency",
+                    countName = "api.motolisting.findbyelectricandcondition.count",
+                    distributionName = "api.motolisting.findbyelectricandcondition.latency",
                 )
             )
         }
     }
 
     @Operation(summary = "Mettre à jour le statut d'une annonce")
-    @PatchMapping("${CarListingScope.PROTECTED}/{id}/status", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PatchMapping("${MotoListingScope.PROTECTED}/{id}/status", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun updateStatus(
         request: HttpServletRequest,
         @PathVariable version: String,
@@ -234,8 +235,8 @@ class CarListingController(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.carlisting.updatestatus.count",
-                    distributionName = "api.carlisting.updatestatus.latency",
+                    countName = "api.motolisting.updatestatus.count",
+                    distributionName = "api.motolisting.updatestatus.latency",
                 )
             )
         }

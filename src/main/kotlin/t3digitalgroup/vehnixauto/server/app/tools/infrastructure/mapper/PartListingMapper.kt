@@ -1,10 +1,12 @@
 package t3digitalgroup.vehnixauto.server.app.tools.infrastructure.mapper
 
+import t3digitalgroup.vehnixauto.server.app.tools.domain.models.PartImage
 import t3digitalgroup.vehnixauto.server.app.tools.domain.models.PartListing
+import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.entities.PartImageEntity
 import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.entities.PartListingEntity
 
 
-fun PartListingEntity.toDomain() = PartListing(
+fun PartListingEntity.toDomain(images: List<PartImage> = emptyList()) = PartListing(
     partListingId = this.partListingId,
     userId = this.userId,
     name = this.name,
@@ -22,7 +24,8 @@ fun PartListingEntity.toDomain() = PartListing(
     country = this.country,
     status = this.status,
     createdAt = this.createdAt,
-    updatedAt = this.updatedAt
+    updatedAt = this.updatedAt,
+    images = images,
 )
 
 fun PartListing.toEntity() = PartListingEntity(
@@ -44,4 +47,11 @@ fun PartListing.toEntity() = PartListingEntity(
     status = this.status,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt
+)
+
+fun PartImageEntity.toDomain() = PartImage(
+    partImageId = this.id,
+    partListingId = this.partListingId,
+    name = this.name,
+    path = this.path,
 )

@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Validator
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Profile
 import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
@@ -56,7 +55,10 @@ class PartListingController(
                 partImageService.createFromFile(part.partListingId!!, file)
             }
             ResponseEntity.status(HttpStatus.CREATED).body(
-                ApiResponseWithMessage(data = part, message = "Saved ${bufferedImages.size} images")
+                ApiResponseWithMessage(
+                    data = service.findById(part.partListingId!!),
+                    message = "Saved ${bufferedImages.size} images",
+                )
             )
         } finally {
             sentry.callToMetric(
@@ -126,7 +128,7 @@ class PartListingController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ApiResponse(service.findByUserId(userId).toList())
+            ApiResponse(service.findByUserId(userId))
         } finally {
             sentry.callToMetric(
                 MetricModel(
@@ -149,7 +151,7 @@ class PartListingController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ApiResponse(service.findByListingType(listingType).toList())
+            ApiResponse(service.findByListingType(listingType))
         } finally {
             sentry.callToMetric(
                 MetricModel(
@@ -172,7 +174,7 @@ class PartListingController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ApiResponse(service.search(query).toList())
+            ApiResponse(service.search(query))
         } finally {
             sentry.callToMetric(
                 MetricModel(

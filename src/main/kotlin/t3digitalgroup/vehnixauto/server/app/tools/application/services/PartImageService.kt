@@ -1,10 +1,12 @@
 package t3digitalgroup.vehnixauto.server.app.tools.application.services
 
+import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import t3digitalgroup.vehnixauto.server.adaptater.provider.gcs.GcsService
 import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.entities.PartImageEntity
+import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.mapper.toDomain
 import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.repositories.PartImageRepository
 import t3digitalgroup.vehnixauto.server.utils.Mode
 
@@ -26,4 +28,7 @@ class PartImageService(
         )
         return repository.save(data)
     }
+
+    suspend fun findByPartListingIdIn(partListingIds: List<Long>) =
+        repository.findByPartListingIdIn(partListingIds).toList().map { it.toDomain() }
 }

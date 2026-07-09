@@ -15,7 +15,14 @@ object CarListingScope {
     const val PRIVATE = "${GlobalRoute.PRIVATE}/${CarFeatures.CAR_LISTING_PATH}"
 }
 
+object DocumentScope {
+    const val PUBLIC = "${GlobalRoute.PUBLIC}/${CarFeatures.DOCUMENT_PATH}"
+    const val PROTECTED = "${GlobalRoute.PROTECT}/${CarFeatures.DOCUMENT_PATH}"
+    const val PRIVATE = "${GlobalRoute.PRIVATE}/${CarFeatures.DOCUMENT_PATH}"
+}
+
 object CarFeatures {
     const val CAR_MODEL_PATH = "cars/models"
     const val CAR_LISTING_PATH = "cars/listings"
+    const val DOCUMENT_PATH = "cars/documents"
 }

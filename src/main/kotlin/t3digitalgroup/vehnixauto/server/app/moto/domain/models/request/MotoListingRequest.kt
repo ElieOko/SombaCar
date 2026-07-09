@@ -1,13 +1,13 @@
-package t3digitalgroup.vehnixauto.server.app.car.domain.models.request
+package t3digitalgroup.vehnixauto.server.app.moto.domain.models.request
 
 import jakarta.validation.constraints.*
 import t3digitalgroup.vehnixauto.server.utils.*
 
-data class CarListingRequest(
+data class MotoListingRequest(
     @NotNull
     val userId: Long,
     @NotNull
-    val carModelId: Long,
+    val motoModelId: Long,
     @NotNull
     val listingType: ListingType,
     @NotNull
@@ -19,10 +19,10 @@ data class CarListingRequest(
     val condition: ItemCondition = ItemCondition.USED,
     val plateNumber: String? = null,
     val color: String? = null,
-    val seats: Int? = null,
+    val engineCc: Int? = null,
     val price: String? = null,
     val devise: Long? = null,
-    val numberVin  : String?= null,
+    val numberVin: String? = null,
     val rentPricePerDay: String? = null,
     val exchangeDescription: String? = null,
     val description: String? = null,

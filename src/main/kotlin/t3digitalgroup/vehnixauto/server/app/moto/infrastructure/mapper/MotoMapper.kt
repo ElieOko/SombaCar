@@ -1,42 +1,46 @@
-package t3digitalgroup.vehnixauto.server.app.car.infrastructure.mapper
+package t3digitalgroup.vehnixauto.server.app.moto.infrastructure.mapper
 
-import t3digitalgroup.vehnixauto.server.app.car.domain.models.*
-import t3digitalgroup.vehnixauto.server.app.car.infrastructure.entities.*
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.Document
+import t3digitalgroup.vehnixauto.server.app.moto.domain.models.*
+import t3digitalgroup.vehnixauto.server.app.moto.infrastructure.entities.*
 
-
-fun CarModelEntity.toDomain() = CarModel(
-    carModelId = this.carModelId,
+fun MotoModelEntity.toDomain() = MotoModel(
+    motoModelId = this.motoModelId,
     brand = this.brand,
     model = this.model,
     generation = this.generation,
     bodyType = this.bodyType,
-    createdAt = this.createdAt
+    createdAt = this.createdAt,
 )
 
-fun CarModel.toEntity() = CarModelEntity(
-    carModelId = this.carModelId,
+fun MotoModel.toEntity() = MotoModelEntity(
+    motoModelId = this.motoModelId,
     brand = this.brand,
     model = this.model,
     generation = this.generation,
     bodyType = this.bodyType,
-    createdAt = this.createdAt
+    createdAt = this.createdAt,
 )
 
-fun CarListingEntity.toDomain(carModel: CarModel? = null, images: List<CarImage> = emptyList(), documents: List<CarDocument>? = null) = CarListing(
+fun MotoListingEntity.toDomain(
+    motoModel: MotoModel? = null,
+    images: List<MotoImage> = emptyList(),
+    documents: List<MotoDocument>? = null,
+) = MotoListing(
     listingId = this.listingId,
     userId = this.userId,
-    carModelId = this.carModelId,
+    motoModelId = this.motoModelId,
     listingType = this.listingType,
     year = this.year,
     isElectric = this.isElectric,
     mileageKm = this.mileageKm,
     condition = this.condition,
     plateNumber = this.plateNumber,
-    color = this.color,
-    devise = this.deviseId,
     numberVin = this.numberVin,
-    seats = this.seats,
+    color = this.color,
+    engineCc = this.engineCc,
     price = this.price,
+    devise = this.deviseId,
     rentPricePerDay = this.rentPricePerDay,
     exchangeDescription = this.exchangeDescription,
     description = this.description,
@@ -45,15 +49,15 @@ fun CarListingEntity.toDomain(carModel: CarModel? = null, images: List<CarImage>
     status = this.status,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt,
-    carModel = carModel,
+    motoModel = motoModel,
     images = images,
     documents = documents,
 )
 
-fun CarListing.toEntity() = CarListingEntity(
+fun MotoListing.toEntity() = MotoListingEntity(
     listingId = this.listingId,
     userId = this.userId,
-    carModelId = this.carModelId,
+    motoModelId = this.motoModelId,
     listingType = this.listingType,
     year = this.year,
     isElectric = this.isElectric,
@@ -61,10 +65,10 @@ fun CarListing.toEntity() = CarListingEntity(
     condition = this.condition,
     plateNumber = this.plateNumber,
     numberVin = this.numberVin,
-    deviseId = this.devise,
     color = this.color,
-    seats = this.seats,
+    engineCc = this.engineCc,
     price = this.price,
+    deviseId = this.devise,
     rentPricePerDay = this.rentPricePerDay,
     exchangeDescription = this.exchangeDescription,
     description = this.description,
@@ -72,25 +76,19 @@ fun CarListing.toEntity() = CarListingEntity(
     country = this.country,
     status = this.status,
     createdAt = this.createdAt,
-    updatedAt = this.updatedAt
+    updatedAt = this.updatedAt,
 )
 
-fun CarImageEntity.toDomain() = CarImage(
-    carImageId = this.id,
-    carId = this.carId,
+fun MotoImageEntity.toDomain() = MotoImage(
+    motoImageId = this.id,
+    motoId = this.motoId,
     name = this.name,
     path = this.path,
 )
 
-fun CarDocumentEntity.toDomain(document: Document? = null) = CarDocument(
-    carDocumentId = this.id,
-    carId = this.carId,
+fun MotoDocumentEntity.toDomain(document: Document? = null) = MotoDocument(
+    motoDocumentId = this.id,
+    motoId = this.motoId,
     documentId = this.documentId,
     document = document,
-)
-
-fun DocumentEntity.toDomain() = Document(
-    documentId = this.id,
-    name = this.name,
-    createdAt = this.createdAt,
 )
