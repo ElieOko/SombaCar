@@ -33,6 +33,11 @@ class JwtAuthFilter(
         val publicPaths = listOf("/api/v1/public/**", "/", "/swagger-ui/**", "/swagger-ui.html/*", "/v3/**", "/files/**", "/auth/login", "/auth/register", "/websocket/**") // ← IMPORTANT: WebSocket doit être public pour le handshake)
 
         try {
+            if (request.method.equals("OPTIONS", ignoreCase = true)) {
+                filterChain.doFilter(request, response)
+                return
+            }
+
             val isPublic = publicPaths.any { pattern ->
                 matcher.match(pattern, path)
             }

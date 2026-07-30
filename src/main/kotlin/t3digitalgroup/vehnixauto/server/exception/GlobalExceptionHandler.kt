@@ -2,6 +2,7 @@ package t3digitalgroup.vehnixauto.server.exception
 
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.*
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.*
@@ -69,6 +70,21 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(mapList)
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrityViolation(e: DataIntegrityViolationException): ResponseEntity<MutableMap<String, Any>> {
+        logger.error("Handle data integrity violation", e)
+        val message = when {
+            e.message?.contains("car_listings_user_id_fkey") == true ->
+                "Utilisateur introuvable."
+            e.message?.contains("car_model_id") == true ->
+                "Modèle de voiture introuvable."
+            else -> "Données invalides."
+        }
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(mutableMapOf("message" to message))
     }
 
 }

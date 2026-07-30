@@ -14,6 +14,7 @@ import t3digitalgroup.vehnixauto.server.app.car.application.services.*
 import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.CarListingRequest
 import t3digitalgroup.vehnixauto.server.route.GlobalRoute
 import t3digitalgroup.vehnixauto.server.route.car.CarListingScope
+import t3digitalgroup.vehnixauto.server.security.Auth
 import t3digitalgroup.vehnixauto.server.security.monitoring.*
 import t3digitalgroup.vehnixauto.server.utils.*
 import t3digitalgroup.vehnixauto.server.utils.bufferMultipartFile
@@ -25,13 +26,14 @@ import t3digitalgroup.vehnixauto.server.utils.bufferMultipartFile
 class CarListingController(
     private val service: CarListingService,
     private val carImageService: CarImageService,
+    private val auth: Auth,
     private val sentry: SentryService,
     private val jsonMapper: JsonMapper,
     private val validator: Validator,
 ) {
     @Operation(summary = "Créer une annonce de voiture")
     @PostMapping(
-        CarListingScope.PUBLIC,
+        CarListingScope.PROTECTED,
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
         produces = [MediaType.APPLICATION_JSON_VALUE],
     )
@@ -42,8 +44,11 @@ class CarListingController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
+            val userId = auth.user()?.first?.userId
+                ?: return@coroutineScope ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(mapOf("message" to "Authentification requise."))
             val listingJson = resolveListingJson(multipartRequest)
-            val body = parseListingRequest(listingJson)
+            val body = parseListingRequest(listingJson).copy(userId = userId)
             val bufferedImages = multipartRequest.getFiles("images")
                 .filter { !it.isEmpty }
                 .map(::bufferMultipartFile)

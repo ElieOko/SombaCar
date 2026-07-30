@@ -9,6 +9,7 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import t3digitalgroup.vehnixauto.server.exception.CustomAccessDeniedHandler
@@ -23,7 +24,7 @@ import t3digitalgroup.vehnixauto.server.utils.Mode
 class ServerConfig(
     private val customAuthEntryPoint: CustomAuthEntryPoint,
     private val  customAccessDeniedHandler: CustomAccessDeniedHandler,
-    private val jwtAuthFilter: JwtAuthFilter
+    private val jwtAuthFilter: JwtAuthFilter,
 ) : WebMvcConfigurer {
     private val log = LoggerFactory.getLogger(this::class.java)
     @PostConstruct
@@ -34,7 +35,7 @@ class ServerConfig(
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
       return httpSecurity
             .csrf { csrf -> csrf.disable() }
-          .cors { it.disable() }
+          .cors { }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .exceptionHandling { configurer ->
                 configurer
@@ -50,6 +51,16 @@ class ServerConfig(
     fun webClientBuilder(): WebClient.Builder {
         return WebClient.builder()
     }
+    override fun addCorsMappings(registry: CorsRegistry) {
+        registry.addMapping("/**")
+            .allowedOriginPatterns("*")
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+            .allowedHeaders("*")
+            .exposedHeaders("Authorization")
+            .allowCredentials(true)
+            .maxAge(3600)
+    }
+
     override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
         registry.addResourceHandler("/property/**")
             .addResourceLocations(

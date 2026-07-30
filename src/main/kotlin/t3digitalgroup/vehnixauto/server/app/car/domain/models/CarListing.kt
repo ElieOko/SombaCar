@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 data class CarListing(
     val listingId: Long? = null,
     val userId: Long,
+    val userFullName: String? = null,
     val carModelId: Long,
     val listingType: String = ListingType.SALE.name,
     val year: Int,

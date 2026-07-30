@@ -10,6 +10,7 @@ import t3digitalgroup.vehnixauto.server.app.car.domain.models.*
 import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.*
 import t3digitalgroup.vehnixauto.server.app.car.infrastructure.mapper.*
 import t3digitalgroup.vehnixauto.server.app.car.infrastructure.repositories.*
+import t3digitalgroup.vehnixauto.server.app.user.infrastructure.repositories.UserRepository
 import t3digitalgroup.vehnixauto.server.utils.*
 import java.time.LocalDateTime
 
@@ -20,9 +21,12 @@ class CarListingService(
     private val carModelRepository: CarModelRepository,
     private val carImageService: CarImageService,
     private val carDocumentService: CarDocumentService,
+    private val userRepository: UserRepository,
 ) {
     suspend fun create(request: CarListingRequest): CarListing {
         validateListingRequest(request)
+        userRepository.findById(request.userId)
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable.")
         val carModel = carModelRepository.findById(request.carModelId)
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Modèle de voiture introuvable.")
 
@@ -126,8 +130,13 @@ class CarListingService(
             emptyMap()
         }
 
+        val userIds = listings.map { it.userId }.distinct()
+        val fullNameByUserId = userRepository.findByUserIdIn(userIds).toList()
+            .associate { it.userId!! to it.fullName }
+
         return listings.map { listing ->
             listing.copy(
+                userFullName = fullNameByUserId[listing.userId],
                 images = imagesByCarId[listing.listingId].orEmpty(),
                 documents = if (includeDocuments) documentsByCarId[listing.listingId].orEmpty() else null,
             )

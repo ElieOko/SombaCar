@@ -1,11 +1,14 @@
 package t3digitalgroup.vehnixauto.server.app.user.infrastructure.repositories
 
+import kotlinx.coroutines.flow.Flow
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import t3digitalgroup.vehnixauto.server.app.user.infrastructure.entities.UserEntity
 
 interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
+
+    fun findByUserIdIn(ids: List<Long>): Flow<UserEntity>
 
     @Query("SELECT * FROM users WHERE email = :identifier OR phone = :identifier AND is_lock = false")
    suspend fun findByPhoneOrEmail(identifier: String) : UserEntity?
