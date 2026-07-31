@@ -36,6 +36,7 @@ class AuthController(
     private val sentry : SentryService,
     private val senderMailAuth : SenderMailAuth,
     private val userRepository: UserRepository,
+    private val redis: RedisStorage,
 ) {
     private val log = LoggerFactory.getLogger(this::class.java)
     @Operation(summary = "Création utilisateur")
@@ -44,7 +45,6 @@ class AuthController(
                          @Valid @RequestBody req : UserRequest
     ): ResponseEntity<Map<String, Any?>> = coroutineScope {
         val startNanos = System.nanoTime()
-        val redis = RedisStorage()
         try {
             if (!isEmailValid(req.email)) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Mail invalid!.")
             val userSystem = req.toDomain()
@@ -52,9 +52,15 @@ class AuthController(
             if (!state) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe invalide.")
             val data = authService.register(userSystem)
             val generator = 6.generateOtp()
-            redis.storeRedisData(data?.email!!,generator,1140)
-            val sendState = senderMailAuth.sendMail(to = data.email!!,otp = generator, time =  "4")
-            log.info("$sendState************")
+            redis.storeRedisData(data?.email!!, generator, 1140)
+            val sendState = senderMailAuth.sendMail(to = data.email!!, otp = generator, time = "4")
+            if (sendState != "Mail Sent Successfully") {
+                throw ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Compte créé mais l'envoi du code de vérification a échoué. Utilisez « renvoyer le code »."
+                )
+            }
+            log.info("OTP sent to ${data.email}")
             val response = mapOf(
                 "user" to data,
                 "message" to "Votre compte utilisateur principal a été créé avec succès. Par ailleurs, nous avons envoyé un code de vérification à votre adresse e-mail."
@@ -134,7 +140,6 @@ class AuthController(
         @RequestBody @Valid identifier : VerifyRequest, @PathVariable version: String
     ) = coroutineScope {
         val startNanos = System.nanoTime()
-        val redis = RedisStorage()
         try {
             val result = redis.getRedisData(identifier.identifier) ?: throw ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
@@ -165,7 +170,6 @@ class AuthController(
                                @RequestBody @Valid user : IdentifiantRequest, @PathVariable version: String
     ): ResponseEntity<Map<String, String?>> = coroutineScope {
         val startNanos = System.nanoTime()
-        val redis = RedisStorage()
         try {
             if (!isEmailValid(user.identifier)) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Mail invalid!.")
             val result = userRepository.findByPhoneOrEmail(user.identifier)?:throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Identifiant invalide !.")

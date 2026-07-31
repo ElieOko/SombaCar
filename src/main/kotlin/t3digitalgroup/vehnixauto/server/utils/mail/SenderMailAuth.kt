@@ -23,20 +23,20 @@ class SenderMailAuth {
             log.info("$to ************")
             val message = (mailSender as JavaMailSender).createMimeMessage()
             val helper = MimeMessageHelper(message, true, "UTF-8")
-            helper.setFrom("contact@casanayo.com","LawApp50")
+            helper.setFrom("contact@casanayo.com","VehnixAuto")
             helper.setTo(to)
             helper.setSubject("Code de Validation")
-            helper.setText("",buildHtmlEmail(otp)) // true = HTML
+            helper.setText(buildHtmlEmail(otp, time), true)
 //           mailSender.send(msg)
             (mailSender as JavaMailSender).send(message)
             return "Mail Sent Successfully"
         } catch (ex: MailException) {
-            System.err.println(ex.message)
+            log.error("Failed to send OTP mail to $to: ${ex.message}", ex)
             return "Error while sending mail"
         }
     }
 
-    private fun buildHtmlEmail(otp: String): String {
+    private fun buildHtmlEmail(otp: String, time: String): String {
         return """
              <!doctype html>
              <html>
@@ -49,7 +49,7 @@ class SenderMailAuth {
                  <div style="max-width: 600px; margin: 0 auto; background-color: #f4f4f4">
                    <!-- Header -->
                    <div style="background-color: #4f46e5; padding: 20px; text-align: center">
-                     <h1 style="color: white; margin: 0">LawApp50</h1>
+                     <h1 style="color: white; margin: 0">VehnixAuto</h1>
                      <p style="color: #c7d2fe; margin: 5px 0 0">Vérification de sécurité</p>
                    </div>
 
@@ -57,7 +57,7 @@ class SenderMailAuth {
                    <div style="background-color: white; padding: 40px 30px; border-radius: 8px; margin: 20px">
                      <h2 style="color: #1f2937; margin-top: 0">Bonjour 👋</h2>
                      <p style="color: #4b5563; line-height: 1.6">
-                     Merci d'avoir créé votre compte sur <strong>LawApp50</strong> ! 🎉<br>Pour finaliser votre inscription et sécuriser votre accès, veuillez utiliser le code de vérification ci-dessous :
+                     Merci d'avoir créé votre compte sur <strong>VehnixAuto</strong> ! 🎉<br>Pour finaliser votre inscription et sécuriser votre accès, veuillez utiliser le code de vérification ci-dessous :
                      </p>
                     
                      <!-- Code OTP -->
@@ -83,7 +83,7 @@ class SenderMailAuth {
                        "
                      >
                        <p style="margin: 0; color: #92400e; font-size: 14px">
-                         ⚠️ <strong>Important :</strong> Ne partagez ce code avec personne. Notre équipe ne vous
+                         ⚠️ <strong>Important :</strong> Ce code expire dans <strong>$time minutes</strong>. Ne partagez ce code avec personne. Notre équipe ne vous
                          demandera jamais ce code.
                        </p>
                      </div>
@@ -92,7 +92,7 @@ class SenderMailAuth {
                    <!-- Footer -->
                    <div style="background-color: #f9fafb; padding: 20px; text-align: center">
                      <p style="color: #6b7280; font-size: 12px; margin: 0">
-                       © 2026 LawApp50. Tous droits réservés.
+                       © 2026 VehnixAuto. Tous droits réservés.
                      </p>
                      <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0">
                        Cet email a été envoyé automatiquement pour la validation de votre compte, merci de ne pas y répondre.
