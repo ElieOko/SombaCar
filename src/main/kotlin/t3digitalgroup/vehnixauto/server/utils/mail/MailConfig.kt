@@ -8,10 +8,6 @@ import java.util.*
 
 @Configuration
 class MailConfig(
-    @Value("\${spring.mail.host}")
-    private val host: String,
-    @Value("\${spring.mail.port}")
-    private val port: Int,
     @Value("\${spring.mail.username}")
     private val usernameMail: String,
     @Value("\${spring.mail.password}")
@@ -20,17 +16,13 @@ class MailConfig(
     @Bean
     fun javaMailSender(): JavaMailSender {
         return JavaMailSenderImpl().apply {
-            this.host = host
-            this.port = port
+            this.host = "smtp.hostinger.com"
+            this.port = 587
             this.username = usernameMail
             this.password = passwordMail
             this.javaMailProperties = Properties().apply {
                 setProperty("mail.smtp.auth", "true")
-                if (port == 465) {
-                    setProperty("mail.smtp.ssl.enable", "true")
-                } else {
-                    setProperty("mail.smtp.starttls.enable", "true")
-                }
+                setProperty("mail.smtp.starttls.enable", "true")
             }
         }
     }
