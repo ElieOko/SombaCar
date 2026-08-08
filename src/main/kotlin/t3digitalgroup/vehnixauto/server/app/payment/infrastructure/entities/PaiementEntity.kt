@@ -27,8 +27,14 @@ class PaiementEntity(
     val typePayment: String = TypePayment.MOBILE_MONEY.name,
     @Column("status")
     var status: String = StatusPayment.PENDING.name,
+    @Column("offer_id")
+    val offerId: Long? = null,
+    @Column("order_number")
+    val orderNumber: String? = null,
+    @Column("purchase_type")
+    val purchaseType: String? = null,
     @Column("date_created")
     val dateCreated: LocalDate = LocalDate.now(),
     @Column("date_updated")
-    val dateUpdated: LocalDate = LocalDate.now()
+    var dateUpdated: LocalDate = LocalDate.now()
 )

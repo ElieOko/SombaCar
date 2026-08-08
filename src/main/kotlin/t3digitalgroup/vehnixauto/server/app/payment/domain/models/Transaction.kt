@@ -13,13 +13,13 @@ data class TransactionState(
 )
 
 data class Transaction(
-    val merchant: String = "carNayo",
+    val merchant: String = "vehnixauto",
     val type: String = "1",
     val reference: String,
     val phone: String,
     val amount: String = "5",
     val currency: String = "USD",
-    val callbackUrl: String = "https://api.carnayo.com/api/v1/public/payment/mobile/callback"
+    val callbackUrl: String = "https://api.vehnixauto.com/api/v1/public/payments/mobile/callback"
 )
 
 data class TransactionRequest(
@@ -27,4 +27,6 @@ data class TransactionRequest(
     val phone: String,
     @NotNull
     val deviseId: Long,
+    @NotNull
+    val offerId: Long,
 )

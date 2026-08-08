@@ -10,29 +10,33 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import reactor.core.publisher.Mono
+import t3digitalgroup.vehnixauto.server.app.payment.domain.models.FlexCheck
+import t3digitalgroup.vehnixauto.server.app.payment.domain.models.ResponseTransaction
+import t3digitalgroup.vehnixauto.server.app.payment.domain.models.ResponseTransactionCard
+import t3digitalgroup.vehnixauto.server.app.payment.domain.models.Transaction
+import t3digitalgroup.vehnixauto.server.app.payment.domain.models.TransactionCard
+import t3digitalgroup.vehnixauto.server.utils.Mode
 
-/*
 @Service
 @Profile(Mode.DEV)
 class FlexPaieService(
     @Value("\${app.api.key}")
     private val apiKeyFlex: String,
-    private val builder: WebClient.Builder
+    private val builder: WebClient.Builder,
 ) {
     private val clientMobile: WebClient = builder.baseUrl("https://backend.flexpay.cd/api/rest/v1/paymentService").build()
     private val clientCard: WebClient = builder.baseUrl("https://cardpayment.flexpay.cd/v1.1/pay").build()
     private val clientCheck: WebClient = builder.baseUrl("https://apicheck.flexpaie.com/api/rest/v1/check").build()
     private val log = LoggerFactory.getLogger(this::class.java)
 
-    suspend fun paymentMobileMoney(transaction: Transaction): ResponseTransaction {
-        return clientMobile
+    suspend fun paymentMobileMoney(transaction: Transaction): ResponseTransaction =
+        clientMobile
             .post()
             .header(HttpHeaders.AUTHORIZATION, apiKeyFlex)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(transaction)
             .retrieve()
             .awaitBody()
-    }
 
     suspend fun checkStateTransaction(orderNumber: String): Mono<FlexCheck> = clientCheck
         .get()
@@ -44,7 +48,7 @@ class FlexPaieService(
             it.bodyToMono(String::class.java).map { msg -> RuntimeException("Client error: $msg") }
         }
         .onStatus(HttpStatusCode::is5xxServerError) {
-            it.bodyToMono(String::class.java).map { msg -> RuntimeException("Problem Server error: $msg") }
+            it.bodyToMono(String::class.java).map { msg -> RuntimeException("Server error: $msg") }
         }
         .bodyToMono(FlexCheck::class.java)
 
@@ -59,4 +63,3 @@ class FlexPaieService(
             .awaitBody()
     }
 }
-*/

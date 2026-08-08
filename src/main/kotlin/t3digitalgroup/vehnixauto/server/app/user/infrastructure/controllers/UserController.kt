@@ -7,10 +7,13 @@ import jakarta.validation.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.springframework.http.*
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import t3digitalgroup.vehnixauto.server.app.user.application.services.UserService
 import t3digitalgroup.vehnixauto.server.app.user.domain.models.request.UserRequestChange
 import t3digitalgroup.vehnixauto.server.route.GlobalRoute
+import t3digitalgroup.vehnixauto.server.security.AdminAuthorization
 import t3digitalgroup.vehnixauto.server.security.monitoring.*
 import t3digitalgroup.vehnixauto.server.utils.ApiResponse
 
@@ -19,6 +22,7 @@ import t3digitalgroup.vehnixauto.server.utils.ApiResponse
 @RequestMapping("${GlobalRoute.ROOT}/{version}")
 class UserController(
     private val userService : UserService,
+    private val adminAuthorization: AdminAuthorization,
     private val sentry : SentryService
 ) {
     @Operation(summary = "List of users")
@@ -26,6 +30,7 @@ class UserController(
     suspend fun getListUser(request: HttpServletRequest, @PathVariable version: String) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
+            adminAuthorization.requireAdmin()
             ApiResponse(userService.findAllUser().toList())
         } finally {
             sentry.callToMetric(
