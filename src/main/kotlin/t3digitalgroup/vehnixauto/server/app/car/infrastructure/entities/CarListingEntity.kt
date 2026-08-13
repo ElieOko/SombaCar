@@ -46,6 +46,10 @@ class CarListingEntity(
     val city: String? = null,
     @Column("country")
     val country: String = "Democratic Republic of the Congo",
+    @Column("latitude")
+    var latitude: Double? = null,
+    @Column("longitude")
+    var longitude: Double? = null,
     @Column("status")
     var status: String = ListingStatus.ACTIVE.name,
     @Column("created_at")

@@ -28,5 +28,7 @@ data class MotoListingRequest(
     val description: String? = null,
     val city: String? = null,
     val country: String = "Democratic Republic of the Congo",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val documentIds: List<Long>? = null,
 )

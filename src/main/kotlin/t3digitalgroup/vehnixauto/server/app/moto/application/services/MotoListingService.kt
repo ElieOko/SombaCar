@@ -25,6 +25,7 @@ class MotoListingService(
 ) {
     suspend fun create(request: MotoListingRequest): MotoListing {
         validateListingRequest(request)
+        validateGeoCoordinates(request.latitude, request.longitude)
         val motoModel = motoModelRepository.findById(request.motoModelId)
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Modèle de moto introuvable.")
 
@@ -45,6 +46,8 @@ class MotoListingService(
             description = request.description,
             city = request.city,
             country = request.country,
+            latitude = request.latitude,
+            longitude = request.longitude,
         ).toEntity()
 
         val saved = listingRepository.save(entity)
@@ -106,6 +109,17 @@ class MotoListingService(
         val entity = listingRepository.findById(listingId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
         entity.status = status.name
+        entity.updatedAt = LocalDateTime.now()
+        val saved = listingRepository.save(entity)
+        val motoModel = motoModelRepository.findById(saved.motoModelId)?.toDomain()
+        return enrichListings(listOf(saved.toDomain(motoModel)), includeDocuments = false).first()
+    }
+
+    suspend fun updateCoordinates(listingId: Long, request: GeoCoordinatesRequest): MotoListing {
+        val entity = listingRepository.findById(listingId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        entity.latitude = request.latitude
+        entity.longitude = request.longitude
         entity.updatedAt = LocalDateTime.now()
         val saved = listingRepository.save(entity)
         val motoModel = motoModelRepository.findById(saved.motoModelId)?.toDomain()

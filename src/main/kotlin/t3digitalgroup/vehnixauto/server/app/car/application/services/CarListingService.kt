@@ -25,6 +25,7 @@ class CarListingService(
 ) {
     suspend fun create(request: CarListingRequest): CarListing {
         validateListingRequest(request)
+        validateGeoCoordinates(request.latitude, request.longitude)
         userRepository.findById(request.userId)
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable.")
         val carModel = carModelRepository.findById(request.carModelId)
@@ -46,7 +47,9 @@ class CarListingService(
             exchangeDescription = request.exchangeDescription,
             description = request.description,
             city = request.city,
-            country = request.country
+            country = request.country,
+            latitude = request.latitude,
+            longitude = request.longitude,
         ).toEntity()
 
         val saved = listingRepository.save(entity)
@@ -109,6 +112,17 @@ class CarListingService(
         val entity = listingRepository.findById(listingId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
         entity.status = status.name
+        entity.updatedAt = LocalDateTime.now()
+        val saved = listingRepository.save(entity)
+        val carModel = carModelRepository.findById(saved.carModelId)?.toDomain()
+        return enrichListings(listOf(saved.toDomain(carModel)), includeDocuments = false).first()
+    }
+
+    suspend fun updateCoordinates(listingId: Long, request: GeoCoordinatesRequest): CarListing {
+        val entity = listingRepository.findById(listingId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        entity.latitude = request.latitude
+        entity.longitude = request.longitude
         entity.updatedAt = LocalDateTime.now()
         val saved = listingRepository.save(entity)
         val carModel = carModelRepository.findById(saved.carModelId)?.toDomain()

@@ -4,6 +4,7 @@ import tools.jackson.databind.json.JsonMapper
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import jakarta.validation.Validator
 import kotlinx.coroutines.coroutineScope
 import org.springframework.context.annotation.Profile
@@ -213,6 +214,30 @@ class MotoListingController(
                     route = "${request.method} /${request.requestURI}",
                     countName = "api.motolisting.findbyelectricandcondition.count",
                     distributionName = "api.motolisting.findbyelectricandcondition.latency",
+                )
+            )
+        }
+    }
+
+    @Operation(summary = "Mettre à jour les coordonnées géographiques d'une annonce")
+    @PatchMapping("${MotoListingScope.PROTECTED}/{id}/coordinates", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun updateCoordinates(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: GeoCoordinatesRequest,
+    ) = coroutineScope {
+        val startNanos = System.nanoTime()
+        try {
+            ResponseEntity.ok(service.updateCoordinates(id, body))
+        } finally {
+            sentry.callToMetric(
+                MetricModel(
+                    startNanos = startNanos,
+                    status = "200",
+                    route = "${request.method} /${request.requestURI}",
+                    countName = "api.motolisting.coordinates.count",
+                    distributionName = "api.motolisting.coordinates.latency",
                 )
             )
         }

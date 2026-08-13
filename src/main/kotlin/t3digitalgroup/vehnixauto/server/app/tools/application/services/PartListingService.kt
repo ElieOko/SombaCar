@@ -11,9 +11,11 @@ import t3digitalgroup.vehnixauto.server.app.tools.domain.models.request.PartList
 import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.mapper.toDomain
 import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.mapper.toEntity
 import t3digitalgroup.vehnixauto.server.app.tools.infrastructure.repositories.PartListingRepository
+import t3digitalgroup.vehnixauto.server.utils.GeoCoordinatesRequest
 import t3digitalgroup.vehnixauto.server.utils.ListingStatus
 import t3digitalgroup.vehnixauto.server.utils.ListingType
 import t3digitalgroup.vehnixauto.server.utils.Mode
+import t3digitalgroup.vehnixauto.server.utils.validateGeoCoordinates
 import java.time.LocalDateTime
 
 @Service
@@ -24,6 +26,7 @@ class PartListingService(
 ) {
     suspend fun create(request: PartListingRequest): PartListing {
         validateListingRequest(request)
+        validateGeoCoordinates(request.latitude, request.longitude)
         val entity = PartListing(
             userId = request.userId,
             name = request.name,
@@ -38,7 +41,9 @@ class PartListingService(
             exchangeDescription = request.exchangeDescription,
             description = request.description,
             city = request.city,
-            country = request.country
+            country = request.country,
+            latitude = request.latitude,
+            longitude = request.longitude,
         ).toEntity()
         return repository.save(entity).toDomain()
     }
@@ -68,6 +73,16 @@ class PartListingService(
         val entity = repository.findById(partListingId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Pièce introuvable.")
         entity.status = status.name
+        entity.updatedAt = LocalDateTime.now()
+        val saved = repository.save(entity).toDomain()
+        return enrichListings(listOf(saved)).first()
+    }
+
+    suspend fun updateCoordinates(partListingId: Long, request: GeoCoordinatesRequest): PartListing {
+        val entity = repository.findById(partListingId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Pièce introuvable.")
+        entity.latitude = request.latitude
+        entity.longitude = request.longitude
         entity.updatedAt = LocalDateTime.now()
         val saved = repository.save(entity).toDomain()
         return enrichListings(listOf(saved)).first()

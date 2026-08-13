@@ -22,5 +22,7 @@ data class PartListingRequest(
     val exchangeDescription: String? = null,
     val description: String? = null,
     val city: String? = null,
-    val country: String = "Democratic Republic of the Congo"
+    val country: String = "Democratic Republic of the Congo",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )

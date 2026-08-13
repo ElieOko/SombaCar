@@ -3,6 +3,7 @@ package t3digitalgroup.vehnixauto.server.app.tools.infrastructure.controllers
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.validation.Valid
 import jakarta.validation.Validator
 import kotlinx.coroutines.coroutineScope
 import org.springframework.context.annotation.Profile
@@ -16,6 +17,7 @@ import t3digitalgroup.vehnixauto.server.route.tools.PartListingScope
 import t3digitalgroup.vehnixauto.server.security.monitoring.*
 import t3digitalgroup.vehnixauto.server.utils.ApiResponse
 import t3digitalgroup.vehnixauto.server.utils.ApiResponseWithMessage
+import t3digitalgroup.vehnixauto.server.utils.GeoCoordinatesRequest
 import t3digitalgroup.vehnixauto.server.utils.ListingStatus
 import t3digitalgroup.vehnixauto.server.utils.ListingType
 import t3digitalgroup.vehnixauto.server.utils.bufferMultipartFile
@@ -183,6 +185,30 @@ class PartListingController(
                     route = "${request.method} /${request.requestURI}",
                     countName = "api.partlisting.search.count",
                     distributionName = "api.partlisting.search.latency",
+                )
+            )
+        }
+    }
+
+    @Operation(summary = "Mettre à jour les coordonnées géographiques d'une annonce de pièce")
+    @PatchMapping("${PartListingScope.PROTECTED}/{id}/coordinates", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun updateCoordinates(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: GeoCoordinatesRequest,
+    ) = coroutineScope {
+        val startNanos = System.nanoTime()
+        try {
+            ResponseEntity.ok(service.updateCoordinates(id, body))
+        } finally {
+            sentry.callToMetric(
+                MetricModel(
+                    startNanos = startNanos,
+                    status = "200",
+                    route = "${request.method} /${request.requestURI}",
+                    countName = "api.partlisting.coordinates.count",
+                    distributionName = "api.partlisting.coordinates.latency",
                 )
             )
         }

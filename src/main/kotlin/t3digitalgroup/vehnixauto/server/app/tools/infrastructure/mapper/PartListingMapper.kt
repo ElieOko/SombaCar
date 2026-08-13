@@ -22,6 +22,8 @@ fun PartListingEntity.toDomain(images: List<PartImage> = emptyList()) = PartList
     description = this.description,
     city = this.city,
     country = this.country,
+    latitude = this.latitude,
+    longitude = this.longitude,
     status = this.status,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt,
@@ -44,6 +46,8 @@ fun PartListing.toEntity() = PartListingEntity(
     description = this.description,
     city = this.city,
     country = this.country,
+    latitude = this.latitude,
+    longitude = this.longitude,
     status = this.status,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt
