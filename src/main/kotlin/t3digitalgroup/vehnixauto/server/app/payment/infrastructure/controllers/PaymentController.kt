@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import t3digitalgroup.vehnixauto.server.app.payment.application.services.PaymentCallbackRouter
 import t3digitalgroup.vehnixauto.server.app.payment.application.services.PaymentService
 import t3digitalgroup.vehnixauto.server.app.payment.application.services.PurchasePaymentService
 import t3digitalgroup.vehnixauto.server.app.payment.domain.models.Paiement
@@ -31,6 +32,7 @@ import t3digitalgroup.vehnixauto.server.utils.ApiResponse
 class PaymentController(
     private val service: PaymentService,
     private val purchasePaymentService: PurchasePaymentService,
+    private val paymentCallbackRouter: PaymentCallbackRouter,
     private val auth: Auth,
     private val adminAuthorization: AdminAuthorization,
     private val sentry: SentryService,
@@ -77,7 +79,7 @@ class PaymentController(
         val startNanos = System.nanoTime()
         try {
             if (!body.reference.isNullOrBlank() && !body.code.isNullOrBlank()) {
-                purchasePaymentService.handleCallback(body.reference, body.code)
+                paymentCallbackRouter.handleCallback(body.reference, body.code)
             }
             ResponseEntity.ok(mapOf("message" to "Callback traité"))
         } finally {
@@ -95,7 +97,7 @@ class PaymentController(
         val startNanos = System.nanoTime()
         try {
             if (!body.reference.isNullOrBlank() && !body.code.isNullOrBlank()) {
-                purchasePaymentService.handleCallback(body.reference, body.code)
+                paymentCallbackRouter.handleCallback(body.reference, body.code)
             }
             ResponseEntity.ok(mapOf("message" to "Callback traité"))
         } finally {
