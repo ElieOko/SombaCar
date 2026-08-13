@@ -226,32 +226,31 @@ class AuthController(
 
     }
 
-    @Operation(summary = "Reset password ")
-    @PutMapping("/api/{version}/protected/reset/password")
-    suspend fun resetPassword(request: HttpServletRequest,
-                              @RequestBody @Valid user : UserPassword, @PathVariable version: String
-    ) : ResponseEntity<Map<String, String>> = coroutineScope {
+    @Operation(summary = "Mot de passe oublié (public)")
+    @PutMapping("/api/{version}/public/reset/password")
+    suspend fun forgotPassword(
+        request: HttpServletRequest,
+        @RequestBody @Valid body: ForgotPasswordRequest,
+        @PathVariable version: String,
+    ): ResponseEntity<Map<String, String>> = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            val session = auth.user()
-            val new = user.newPassword
-            authService.changePassword(session?.first?.userId?:0,new)
-            val message = mapOf("message" to "Mot de passe changé avec succès")
-            ResponseEntity.ok(message)
+            authService.forgotPassword(body.identifier, body.code, body.newPassword)
+            ResponseEntity.ok(mapOf("message" to "Mot de passe réinitialisé avec succès"))
         } finally {
             sentry.callToMetric(
                 MetricModel(
                     startNanos = startNanos,
                     status = "200",
                     route = "${request.method} /${request.requestURI}",
-                    countName = "api.auth.resetpassword.count",
-                    distributionName = "api.auth.resetpassword.latency"
+                    countName = "api.auth.forgotpassword.count",
+                    distributionName = "api.auth.forgotpassword.latency",
                 )
             )
         }
     }
 
-    @Operation(summary = "Change password utilisateur")
+    @Operation(summary = "Changer le mot de passe (utilisateur connecté)")
     @PutMapping("/api/{version}/protected/change/password")
     suspend fun updateUser(request: HttpServletRequest,
                            @RequestBody @Valid user : UserPassword, @PathVariable version: String

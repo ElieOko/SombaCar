@@ -8,6 +8,7 @@ import org.springframework.http.*
 import org.springframework.stereotype.*
 import org.springframework.transaction.annotation.*
 import org.springframework.web.server.*
+import t3digitalgroup.vehnixauto.server.adaptater.provider.redis.RedisStorage
 import t3digitalgroup.vehnixauto.server.adaptater.provider.twilio.TwilioService
 import t3digitalgroup.vehnixauto.server.app.user.domain.models.User
 import t3digitalgroup.vehnixauto.server.app.user.domain.models.UserDto
@@ -119,6 +120,19 @@ class AuthService(
             return updatedUser.toDomain()
         }
         throw ResponseStatusException(HttpStatusCode.valueOf(403), "ID invalide.")
+    }
+
+    suspend fun forgotPassword(identifier: String, code: String, newPassword: String): UserDto {
+        val user = userRepository.findByPhoneOrEmail(identifier)
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Identifiant invalide.")
+        val redis = RedisStorage()
+        val storedCode = redis.getRedisData(identifier)
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Code expiré ou identifiant invalide.")
+        if (storedCode != code) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Code invalide.")
+        }
+        redis.delete(identifier)
+        return changePassword(user.userId!!, newPassword)
     }
     suspend fun goCertification(id : Long,state : Boolean) = coroutineScope {
         val user = userRepository.findById(id)?:throw ResponseStatusException(
