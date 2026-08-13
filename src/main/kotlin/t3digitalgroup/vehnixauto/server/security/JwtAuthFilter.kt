@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.*
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.authorization.AuthorizationDeniedException
@@ -20,6 +21,7 @@ import t3digitalgroup.vehnixauto.server.utils.Mode
 class JwtAuthFilter(
     private val jwtService: JwtService,
     private val userService: UserService,
+    @Value("\${app.api-test-mode:false}") private val apiTestMode: Boolean,
 ): OncePerRequestFilter() {
     private val log = LoggerFactory.getLogger(this::class.java)
     private val matcher = AntPathMatcher()
@@ -30,7 +32,18 @@ class JwtAuthFilter(
         filterChain: FilterChain
     ) {
         val path = request.requestURI
-        val publicPaths = listOf("/api/v1/public/**", "/", "/swagger-ui/**", "/swagger-ui.html/*", "/v3/**", "/files/**", "/auth/login", "/auth/register", "/websocket/**") // ← IMPORTANT: WebSocket doit être public pour le handshake)
+        val publicPaths = listOf(
+            "/api/v1/public/**",
+            "/",
+            "/swagger-ui/**",
+            "/swagger-ui.html/*",
+            "/v3/**",
+            "/files/**",
+            "/auth/login",
+            "/auth/register",
+            "/auth/password/reset",
+            "/websocket/**",
+        )
 
         try {
             if (request.method.equals("OPTIONS", ignoreCase = true)) {
@@ -40,9 +53,12 @@ class JwtAuthFilter(
 
             val isPublic = publicPaths.any { pattern ->
                 matcher.match(pattern, path)
-            }
+            } || isTemporaryTestPublic(path)
 
             if (isPublic) {
+                if (apiTestMode && isTemporaryTestPublic(path)) {
+                    setTestAuthentication()
+                }
                 logger.info("🟢 Public route: $path")
                 filterChain.doFilter(request, response)
                 return
@@ -94,5 +110,18 @@ class JwtAuthFilter(
     }
     companion object {
         const val ATTR = "CLIENT_REQUEST_INFO"
+    }
+
+    private fun isTemporaryTestPublic(path: String): Boolean =
+        apiTestMode && ApiTestSecuritySupport.temporaryPublicPatterns.any { matcher.match(it, path) }
+
+    private fun setTestAuthentication() {
+        if (SecurityContextHolder.getContext().authentication != null) return
+        val auth = UsernamePasswordAuthenticationToken(
+            ApiTestSecuritySupport.testUserPrincipalName(),
+            null,
+            emptyList(),
+        )
+        SecurityContextHolder.getContext().authentication = auth
     }
 }
