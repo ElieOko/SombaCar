@@ -27,6 +27,4 @@ data class TransactionRequest(
     val phone: String,
     @NotNull
     val deviseId: Long,
-    @NotNull
-    val offerId: Long,
 )

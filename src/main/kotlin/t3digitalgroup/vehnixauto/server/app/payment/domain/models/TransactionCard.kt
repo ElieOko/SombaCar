@@ -18,6 +18,4 @@ data class TransactionCard(
 data class TransactionCardRequest(
     @NotNull
     val deviseId: Long,
-    @NotNull
-    val offerId: Long,
 )
