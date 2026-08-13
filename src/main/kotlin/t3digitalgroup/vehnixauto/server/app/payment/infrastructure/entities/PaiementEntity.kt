@@ -33,6 +33,8 @@ class PaiementEntity(
     val orderNumber: String? = null,
     @Column("purchase_type")
     val purchaseType: String? = null,
+    @Column("subscription_plan_id")
+    val subscriptionPlanId: Long? = null,
     @Column("date_created")
     val dateCreated: LocalDate = LocalDate.now(),
     @Column("date_updated")

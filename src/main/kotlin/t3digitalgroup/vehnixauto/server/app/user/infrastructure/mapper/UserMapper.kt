@@ -14,6 +14,7 @@ fun UserEntity.toDomain(): UserDto {
         username = entity.username.toString(),
         city = entity.city,
         isPremium = entity.isPremium,
+        premiumExpiresAt = entity.premiumExpiresAt,
         isCertified = entity.isCertified,
         firstName = entity.firstName,
         lastName = entity.lastName,

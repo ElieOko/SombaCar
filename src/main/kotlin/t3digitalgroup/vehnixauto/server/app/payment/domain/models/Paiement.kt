@@ -15,6 +15,7 @@ data class Paiement(
     val offerId: Long? = null,
     val orderNumber: String? = null,
     val purchaseType: String? = null,
+    val subscriptionPlanId: Long? = null,
     val dateCreated: LocalDate = LocalDate.now(),
     val dateUpdated: LocalDate = LocalDate.now()
 )

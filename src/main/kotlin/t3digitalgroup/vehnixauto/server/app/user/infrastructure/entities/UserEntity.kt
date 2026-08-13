@@ -30,6 +30,8 @@ class UserEntity(
     var fromService : String? = null,
     @Column("is_premium")
     var isPremium: Boolean = false,
+    @Column("premium_expires_at")
+    var premiumExpiresAt: LocalDateTime? = null,
     @Column("is_certified")
     var isCertified: Boolean = false,
     @Column("is_lock")

@@ -41,6 +41,7 @@ data class UserDto(
     var firstName : String,
     var lastName : String,
     val isPremium : Boolean,
+    val premiumExpiresAt: java.time.LocalDateTime? = null,
     var isCertified: Boolean
 )
 

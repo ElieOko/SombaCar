@@ -18,6 +18,7 @@ fun PaiementEntity.toDomain() = Paiement(
     offerId = this.offerId,
     orderNumber = this.orderNumber,
     purchaseType = this.purchaseType,
+    subscriptionPlanId = this.subscriptionPlanId,
     dateCreated = this.dateCreated,
     dateUpdated = this.dateUpdated
 )
@@ -34,6 +35,7 @@ fun Paiement.toEntity() = PaiementEntity(
     offerId = this.offerId,
     orderNumber = this.orderNumber,
     purchaseType = this.purchaseType,
+    subscriptionPlanId = this.subscriptionPlanId,
     dateCreated = this.dateCreated,
     dateUpdated = this.dateUpdated
 )
