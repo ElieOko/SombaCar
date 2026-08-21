@@ -13,13 +13,13 @@ data class TransactionState(
 )
 
 data class Transaction(
-    val merchant: String = "vehnixauto",
+    val merchant: String = "casanayo",
     val type: String = "1",
     val reference: String,
     val phone: String,
     val amount: String = "5",
     val currency: String = "USD",
-    val callbackUrl: String = "https://api.vehnixauto.com/api/v1/public/payments/mobile/callback"
+    val callbackUrl: String = "https://driver.vehnixauto.com/api/v1/public/payments/mobile/callback"
 )
 
 data class TransactionRequest(
