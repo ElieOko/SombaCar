@@ -92,6 +92,7 @@ class NewFeaturesApiTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(0, response.body?.get("reportCount"))
+        assertEquals(3, response.body?.get("deactivationThreshold"))
     }
 
     @Test
@@ -99,7 +100,14 @@ class NewFeaturesApiTest {
         val garageService = mock<GarageService>()
         whenever(garageService.findAllActive()).thenReturn(emptyList())
 
-        val controller = GarageController(garageService, auth, premiumAuthorization, sentry)
+        val controller = GarageController(
+            garageService,
+            mock(),
+            auth,
+            sentry,
+            mock(),
+            mock(),
+        )
         val response = controller.findAllActive(request, "v1")
 
         assertNotNull(response)
@@ -149,7 +157,16 @@ class NewFeaturesApiTest {
         val mechanicService = mock<MechanicService>()
         whenever(mechanicService.findNightAvailable()).thenReturn(emptyList())
 
-        val controller = MechanicController(mechanicService, auth, premiumAuthorization, adminAuthorization, sentry)
+        val controller = MechanicController(
+            mechanicService,
+            mock(),
+            auth,
+            premiumAuthorization,
+            adminAuthorization,
+            sentry,
+            mock(),
+            mock(),
+        )
         val response = controller.findNightAvailable(request, "v1")
 
         assertNotNull(response)

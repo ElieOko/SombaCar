@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import t3digitalgroup.vehnixauto.server.app.mechanic.domain.models.Mechanic
 import t3digitalgroup.vehnixauto.server.app.mechanic.domain.models.MechanicContactRequest
@@ -28,10 +29,11 @@ class MechanicService(
     private val repository: MechanicRepository,
     private val contactRepository: MechanicContactRepository,
     private val notificationRepository: NotificationRepository,
+    private val mechanicImageService: MechanicImageService,
 ) {
     suspend fun create(request: MechanicRequest): Mechanic {
         validateGeoCoordinates(request.latitude, request.longitude)
-        return repository.save(
+        val saved = repository.save(
             Mechanic(
                 garageId = request.garageId,
                 fullName = request.fullName,
@@ -40,19 +42,28 @@ class MechanicService(
                 latitude = request.latitude,
                 longitude = request.longitude,
                 isNightAvailable = request.isNightAvailable,
-            ).toEntity()
+            ).toEntity(),
         ).toDomain()
+        return enrichMechanics(listOf(saved)).first()
+    }
+
+    suspend fun addImages(mechanicId: Long, files: List<MultipartFile>): Mechanic {
+        findById(mechanicId)
+        files.filter { !it.isEmpty }.forEach { file ->
+            mechanicImageService.createFromFile(mechanicId, file)
+        }
+        return findById(mechanicId)
     }
 
     suspend fun findById(id: Long): Mechanic =
-        repository.findById(id)?.toDomain()
+        repository.findById(id)?.toDomain()?.let { enrichMechanics(listOf(it)).first() }
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Mécanicien introuvable.")
 
     suspend fun findNightAvailable(): List<Mechanic> =
-        repository.findNightAvailable().map { it.toDomain() }.toList()
+        enrichMechanics(repository.findNightAvailable().map { it.toDomain() }.toList())
 
     suspend fun findAllActive(): List<Mechanic> =
-        repository.findAllActive().map { it.toDomain() }.toList()
+        enrichMechanics(repository.findAllActive().map { it.toDomain() }.toList())
 
     suspend fun contact(userId: Long, request: MechanicContactRequestBody): MechanicContactRequest {
         val mechanic = findById(request.mechanicId)
@@ -69,7 +80,7 @@ class MechanicService(
                 mechanicId = request.mechanicId,
                 message = request.message,
                 status = MechanicContactStatus.PENDING.name,
-            ).toEntity()
+            ).toEntity(),
         ).toDomain()
 
         notificationRepository.save(
@@ -78,7 +89,7 @@ class MechanicService(
                 title = "Demande de dépannage envoyée",
                 message = "Votre demande a été transmise à ${mechanic.fullName}.",
                 tag = TagType.SECURITY.name,
-            )
+            ),
         )
 
         return contact
@@ -92,6 +103,19 @@ class MechanicService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Mécanicien introuvable.")
         entity.isActive = false
         entity.updatedAt = LocalDateTime.now()
-        return repository.save(entity).toDomain()
+        return enrichMechanics(listOf(repository.save(entity).toDomain())).first()
+    }
+
+    private suspend fun enrichMechanics(mechanics: List<Mechanic>): List<Mechanic> {
+        if (mechanics.isEmpty()) return mechanics
+        val ids = mechanics.mapNotNull { it.mechanicId }
+        if (ids.isEmpty()) return mechanics
+
+        val imagesByMechanicId = mechanicImageService.findByMechanicIdIn(ids)
+            .groupBy { it.mechanicId }
+
+        return mechanics.map { mechanic ->
+            mechanic.copy(images = imagesByMechanicId[mechanic.mechanicId].orEmpty())
+        }
     }
 }

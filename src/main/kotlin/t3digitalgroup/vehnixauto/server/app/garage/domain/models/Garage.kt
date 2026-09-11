@@ -17,4 +17,5 @@ data class Garage(
     val isActive: Boolean = true,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now(),
+    val images: List<GarageImage> = emptyList(),
 )

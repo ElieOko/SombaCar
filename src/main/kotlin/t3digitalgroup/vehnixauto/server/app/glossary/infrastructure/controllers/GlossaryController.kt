@@ -17,7 +17,7 @@ import t3digitalgroup.vehnixauto.server.app.glossary.domain.models.request.Gloss
 import t3digitalgroup.vehnixauto.server.app.glossary.domain.models.request.GlossaryEntryUpdateRequest
 import t3digitalgroup.vehnixauto.server.route.GlobalRoute
 import t3digitalgroup.vehnixauto.server.route.glossary.GlossaryScope
-import t3digitalgroup.vehnixauto.server.security.Auth
+import t3digitalgroup.vehnixauto.server.security.AdminAuthorization
 import t3digitalgroup.vehnixauto.server.security.monitoring.MetricModel
 import t3digitalgroup.vehnixauto.server.security.monitoring.SentryService
 import t3digitalgroup.vehnixauto.server.utils.ApiResponse
@@ -32,7 +32,7 @@ import tools.jackson.databind.json.JsonMapper
 class GlossaryController(
     private val service: GlossaryService,
     private val glossaryFileService: GlossaryFileService,
-    private val auth: Auth,
+    private val adminAuthorization: AdminAuthorization,
     private val sentry: SentryService,
     private val jsonMapper: JsonMapper,
     private val validator: Validator,
@@ -50,10 +50,8 @@ class GlossaryController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            requireAdmin()
+            val adminId = adminAuthorization.requireAdmin()
             val body = parseGlossaryRequest(resolveGlossaryJson(multipartRequest))
-            val adminId = auth.user()?.first?.userId
-                ?: throw IllegalStateException("Utilisateur introuvable")
             val bufferedFiles = multipartRequest.getFiles("files")
                 .filter { !it.isEmpty }
                 .map(::bufferMultipartFile)
@@ -92,7 +90,7 @@ class GlossaryController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            requireAdmin()
+            adminAuthorization.requireAdmin()
             validate(body)
             ResponseEntity.ok(service.update(id, body))
         } finally {
@@ -117,7 +115,7 @@ class GlossaryController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            requireAdmin()
+            adminAuthorization.requireAdmin()
             service.delete(id)
             ResponseEntity.ok(mapOf("message" to "Entrée supprimée"))
         } finally {
@@ -147,7 +145,7 @@ class GlossaryController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            requireAdmin()
+            adminAuthorization.requireAdmin()
             service.findById(id)
             val bufferedFiles = multipartRequest.getFiles("files")
                 .filter { !it.isEmpty }
@@ -182,7 +180,7 @@ class GlossaryController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            requireAdmin()
+            adminAuthorization.requireAdmin()
             glossaryFileService.deleteById(id, fileId)
             ResponseEntity.ok(mapOf("message" to "Fichier supprimé"))
         } finally {
@@ -228,7 +226,7 @@ class GlossaryController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            requireAdmin()
+            adminAuthorization.requireAdmin()
             ApiResponse(service.findAll())
         } finally {
             sentry.callToMetric(
@@ -308,17 +306,6 @@ class GlossaryController(
                     countName = "api.glossary.findbycategory.count",
                     distributionName = "api.glossary.findbycategory.latency",
                 )
-            )
-        }
-    }
-
-    private suspend fun requireAdmin() {
-        val session = auth.user()
-        val isAdmin = session?.second?.find { true } == true
-        if (!isAdmin) {
-            throw org.springframework.web.server.ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "Accès non autorisé",
             )
         }
     }

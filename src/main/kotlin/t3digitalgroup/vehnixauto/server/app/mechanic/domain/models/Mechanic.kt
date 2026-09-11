@@ -14,6 +14,7 @@ data class Mechanic(
     val isActive: Boolean = true,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now(),
+    val images: List<MechanicImage> = emptyList(),
 )
 
 data class MechanicContactRequest(

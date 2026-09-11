@@ -4,25 +4,30 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
+import jakarta.validation.Validator
 import kotlinx.coroutines.coroutineScope
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartHttpServletRequest
 import org.springframework.web.server.ResponseStatusException
+import t3digitalgroup.vehnixauto.server.app.garage.application.services.GarageImageService
 import t3digitalgroup.vehnixauto.server.app.garage.application.services.GarageService
 import t3digitalgroup.vehnixauto.server.app.garage.domain.models.request.GarageRequest
 import t3digitalgroup.vehnixauto.server.app.garage.domain.models.request.GarageUpdateRequest
 import t3digitalgroup.vehnixauto.server.route.GlobalRoute
 import t3digitalgroup.vehnixauto.server.route.garage.GarageScope
 import t3digitalgroup.vehnixauto.server.security.Auth
-import t3digitalgroup.vehnixauto.server.security.PremiumAuthorization
 import t3digitalgroup.vehnixauto.server.security.monitoring.MetricModel
 import t3digitalgroup.vehnixauto.server.security.monitoring.SentryService
 import t3digitalgroup.vehnixauto.server.utils.ApiResponse
+import t3digitalgroup.vehnixauto.server.utils.ApiResponseWithMessage
 import t3digitalgroup.vehnixauto.server.utils.GarageType
 import t3digitalgroup.vehnixauto.server.utils.GeoCoordinatesRequest
+import t3digitalgroup.vehnixauto.server.utils.bufferMultipartFile
+import tools.jackson.databind.json.JsonMapper
 
 @Tag(name = "Garage", description = "Gestion des garages (voiture, moto, pièce)")
 @RestController
@@ -30,23 +35,72 @@ import t3digitalgroup.vehnixauto.server.utils.GeoCoordinatesRequest
 @Profile("dev")
 class GarageController(
     private val service: GarageService,
+    private val garageImageService: GarageImageService,
     private val auth: Auth,
-    private val premiumAuthorization: PremiumAuthorization,
     private val sentry: SentryService,
+    private val jsonMapper: JsonMapper,
+    private val validator: Validator,
 ) {
     @Operation(summary = "Créer un garage")
-    @PostMapping(GarageScope.PROTECTED, produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(
+        GarageScope.PROTECTED,
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+    )
     suspend fun create(
         request: HttpServletRequest,
         @PathVariable version: String,
-        @Valid @RequestBody body: GarageRequest,
+        multipartRequest: MultipartHttpServletRequest,
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
             val userId = requireUserId()
-            ResponseEntity.status(HttpStatus.CREATED).body(service.create(userId, body))
+            val body = parseGarageRequest(resolveGarageJson(multipartRequest))
+            val bufferedImages = multipartRequest.getFiles("images")
+                .filter { !it.isEmpty }
+                .map(::bufferMultipartFile)
+            val garage = service.create(userId, body)
+            bufferedImages.forEach { file ->
+                garageImageService.createFromFile(garage.garageId!!, file)
+            }
+            ResponseEntity.status(HttpStatus.CREATED).body(
+                ApiResponseWithMessage(
+                    data = service.findById(garage.garageId!!),
+                    message = "Saved ${bufferedImages.size} images",
+                ),
+            )
         } finally {
             recordMetric(request, startNanos, "api.garage.create")
+        }
+    }
+
+    @Operation(summary = "Ajouter des images à un garage")
+    @PostMapping(
+        "${GarageScope.PROTECTED}/{id}/images",
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+    )
+    suspend fun addImages(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        multipartRequest: MultipartHttpServletRequest,
+    ) = coroutineScope {
+        val startNanos = System.nanoTime()
+        try {
+            val userId = requireUserId()
+            val files = multipartRequest.getFiles("images")
+                .filter { !it.isEmpty }
+                .map(::bufferMultipartFile)
+            val garage = service.addImages(userId, id, files)
+            ResponseEntity.ok(
+                ApiResponseWithMessage(
+                    data = garage,
+                    message = "Saved ${files.size} images",
+                ),
+            )
+        } finally {
+            recordMetric(request, startNanos, "api.garage.addimages")
         }
     }
 
@@ -80,7 +134,7 @@ class GarageController(
         }
     }
 
-    @Operation(summary = "Détail d'un garage (premium)")
+    @Operation(summary = "Détail d'un garage")
     @GetMapping("${GarageScope.PROTECTED}/browse/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findById(
         request: HttpServletRequest,
@@ -89,14 +143,13 @@ class GarageController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            premiumAuthorization.requirePremium()
             ResponseEntity.ok(service.findById(id))
         } finally {
             recordMetric(request, startNanos, "api.garage.findbyid")
         }
     }
 
-    @Operation(summary = "Liste des garages actifs (premium)")
+    @Operation(summary = "Liste des garages actifs")
     @GetMapping("${GarageScope.PROTECTED}/browse", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findAllActive(
         request: HttpServletRequest,
@@ -104,14 +157,13 @@ class GarageController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            premiumAuthorization.requirePremium()
             ApiResponse(service.findAllActive())
         } finally {
             recordMetric(request, startNanos, "api.garage.findall")
         }
     }
 
-    @Operation(summary = "Garages actifs par type (premium)")
+    @Operation(summary = "Garages actifs par type")
     @GetMapping("${GarageScope.PROTECTED}/browse/type/{garageType}", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findByType(
         request: HttpServletRequest,
@@ -120,7 +172,6 @@ class GarageController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            premiumAuthorization.requirePremium()
             ApiResponse(service.findActiveByType(garageType))
         } finally {
             recordMetric(request, startNanos, "api.garage.findbytype")
@@ -177,6 +228,29 @@ class GarageController(
         }
     }
 
+    private fun parseGarageRequest(garageJson: String): GarageRequest {
+        val body = try {
+            jsonMapper.readValue(garageJson, GarageRequest::class.java)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Invalid garage JSON: ${e.message}")
+        }
+        val violation = validator.validate(body).firstOrNull()
+        if (violation != null) {
+            throw IllegalArgumentException(violation.message ?: "Invalid garage data")
+        }
+        return body
+    }
+
+    private fun resolveGarageJson(multipartRequest: MultipartHttpServletRequest): String {
+        multipartRequest.getParameter("garage")?.takeIf { it.isNotBlank() }?.let { return it }
+        val garagePart = multipartRequest.getFile("garage")
+            ?: multipartRequest.getFiles("garage").firstOrNull()
+        if (garagePart != null && !garagePart.isEmpty) {
+            return String(garagePart.bytes, Charsets.UTF_8)
+        }
+        throw IllegalArgumentException("Missing garage field")
+    }
+
     private suspend fun requireUserId(): Long =
         auth.user()?.first?.userId ?: throw ResponseStatusException(
             HttpStatus.UNAUTHORIZED,
@@ -191,7 +265,7 @@ class GarageController(
                 route = "${request.method} /${request.requestURI}",
                 countName = "$metricName.count",
                 distributionName = "$metricName.latency",
-            )
+            ),
         )
     }
 }
