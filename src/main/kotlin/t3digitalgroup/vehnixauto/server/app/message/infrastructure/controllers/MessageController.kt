@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Profile
 import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartHttpServletRequest
 import t3digitalgroup.vehnixauto.server.app.message.application.services.MessageService
 import t3digitalgroup.vehnixauto.server.app.message.domain.models.request.PlatformReplyRequest
 import t3digitalgroup.vehnixauto.server.app.message.domain.models.request.SupportMessageRequest
@@ -17,6 +18,7 @@ import t3digitalgroup.vehnixauto.server.route.message.MessageScope
 import t3digitalgroup.vehnixauto.server.security.monitoring.MetricModel
 import t3digitalgroup.vehnixauto.server.security.monitoring.SentryService
 import t3digitalgroup.vehnixauto.server.utils.ApiResponse
+import t3digitalgroup.vehnixauto.server.utils.bufferMultipartFile
 
 @Tag(name = "Message", description = "Gestion des messages de support")
 @RestController
@@ -26,6 +28,94 @@ class MessageController(
     private val service: MessageService,
     private val sentry: SentryService,
 ) {
+    @Operation(summary = "Envoyer un message utilisateur (texte et/ou photos)")
+    @PostMapping(
+        "${MessageScope.PROTECTED}/user/media",
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+    )
+    suspend fun sendUserMessageWithMedia(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        multipartRequest: MultipartHttpServletRequest,
+    ) = coroutineScope {
+        val startNanos = System.nanoTime()
+        try {
+            val threadId = multipartRequest.getParameter("threadId")?.toLongOrNull()
+                ?: throw org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "threadId est obligatoire",
+                )
+            val senderId = multipartRequest.getParameter("senderId")?.toLongOrNull()
+            val content = multipartRequest.getParameter("content")
+            val files = multipartRequest.getFiles("files")
+                .filter { !it.isEmpty }
+                .map(::bufferMultipartFile)
+            ResponseEntity.status(HttpStatus.CREATED).body(
+                service.sendUserMessage(
+                    SupportMessageRequest(threadId = threadId, senderId = senderId, content = content),
+                    files,
+                )
+            )
+        } finally {
+            sentry.callToMetric(
+                MetricModel(
+                    startNanos = startNanos,
+                    status = "200",
+                    route = "${request.method} /${request.requestURI}",
+                    countName = "api.message.sendusermessage.media.count",
+                    distributionName = "api.message.sendusermessage.media.latency",
+                )
+            )
+        }
+    }
+
+    @Operation(summary = "Répondre en tant que plateforme (texte et/ou photos)")
+    @PostMapping(
+        "${MessageScope.PROTECTED}/platform/media",
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+    )
+    suspend fun replyAsPlatformWithMedia(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        multipartRequest: MultipartHttpServletRequest,
+    ) = coroutineScope {
+        val startNanos = System.nanoTime()
+        try {
+            val threadId = multipartRequest.getParameter("threadId")?.toLongOrNull()
+                ?: throw org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "threadId est obligatoire",
+                )
+            val adminId = multipartRequest.getParameter("adminId")?.toLongOrNull()
+                ?: throw org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "adminId est obligatoire",
+                )
+            val content = multipartRequest.getParameter("content")
+            val files = multipartRequest.getFiles("files")
+                .filter { !it.isEmpty }
+                .map(::bufferMultipartFile)
+            ResponseEntity.status(HttpStatus.CREATED).body(
+                service.replyAsPlatform(
+                    PlatformReplyRequest(threadId = threadId, adminId = adminId, content = content),
+                    files,
+                )
+            )
+        } finally {
+            sentry.callToMetric(
+                MetricModel(
+                    startNanos = startNanos,
+                    status = "200",
+                    route = "${request.method} /${request.requestURI}",
+                    countName = "api.message.replyasplatform.media.count",
+                    distributionName = "api.message.replyasplatform.media.latency",
+                )
+            )
+        }
+    }
+
     @Operation(summary = "Envoyer un message utilisateur")
     @PostMapping("${MessageScope.PROTECTED}/user", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun sendUserMessage(

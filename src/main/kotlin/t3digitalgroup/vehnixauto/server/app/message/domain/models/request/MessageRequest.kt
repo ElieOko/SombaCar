@@ -20,8 +20,7 @@ data class SupportThreadRequest(
 data class SupportMessageRequest(
     @NotNull
     val threadId: Long,
-    @NotBlank
-    val content: String,
+    val content: String? = null,
     val senderId: Long? = null
 )
 
@@ -30,6 +29,5 @@ data class PlatformReplyRequest(
     val threadId: Long,
     @NotNull
     val adminId: Long,
-    @NotBlank
-    val content: String
+    val content: String? = null,
 )

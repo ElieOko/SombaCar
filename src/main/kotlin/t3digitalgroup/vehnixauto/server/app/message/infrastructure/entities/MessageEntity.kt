@@ -17,7 +17,7 @@ class MessageEntity(
     @Column("sender_id")
     val senderId: Long? = null,
     @Column("content")
-    val content: String,
+    val content: String? = null,
     @Column("is_read")
     var isRead: Boolean = false,
     @Column("sent_at")

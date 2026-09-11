@@ -23,6 +23,7 @@ import t3digitalgroup.vehnixauto.server.app.user.infrastructure.repositories.Acc
 import t3digitalgroup.vehnixauto.server.app.user.infrastructure.repositories.RefreshTokenRepository
 import t3digitalgroup.vehnixauto.server.app.user.infrastructure.repositories.UserRepository
 import t3digitalgroup.vehnixauto.server.security.HashEncoder
+import t3digitalgroup.vehnixauto.server.security.JwtUserIdSupport
 import t3digitalgroup.vehnixauto.server.security.JwtService
 import t3digitalgroup.vehnixauto.server.utils.Mode
 import t3digitalgroup.vehnixauto.server.utils.isEmailValid
@@ -81,8 +82,9 @@ class AuthService(
             val user = userRepository.findByPhoneOrEmail(validIdentifier.toString()) ?: throw ResponseStatusException(HttpStatusCode.valueOf(403), "Invalid credentials.")
             if(!hashEncoder.matches(password, user.password.toString())) throw ResponseStatusException(HttpStatusCode.valueOf(403), "Invalid credentials.")
             log.info("Logging into user ${user.userId}")
-            val newAccessToken = jwtService.generateAccessToken(user.userId!!.toHexString())
-            val newRefreshToken = jwtService.generateRefreshToken(user.userId.toHexString())
+            val userIdSubject = JwtUserIdSupport.formatUserId(user.userId!!)
+            val newAccessToken = jwtService.generateAccessToken(userIdSubject)
+            val newRefreshToken = jwtService.generateRefreshToken(userIdSubject)
             log.info("after generate ${user.userId}")
             val accounts = serviceMultiAccount.getAll().filter { it.userId == user.userId }.toList()
             val accountMultiple: List<AccountDTO> =  accounts.map {
@@ -174,13 +176,14 @@ class AuthService(
     @Transactional
     suspend fun refresh(refreshToken: String): TokenPair {
         if(!jwtService.validateRefreshToken(refreshToken)) throw ResponseStatusException(HttpStatusCode.valueOf(403), "Invalid refresh token.")
-        val userId = jwtService.getUserIdFromToken(refreshToken)
-        val user = userRepository.findById(userId.toLong()) ?: throw ResponseStatusException(HttpStatusCode.valueOf(403), "Invalid refresh token.")
+        val userIdSubject = jwtService.getUserIdFromToken(refreshToken)
+        val userId = JwtUserIdSupport.parseSubject(userIdSubject)
+        val user = userRepository.findById(userId) ?: throw ResponseStatusException(HttpStatusCode.valueOf(403), "Invalid refresh token.")
         val hashed = hashToken(refreshToken)
         refreshTokenRepository.findByUserIdAndHashedToken(user.userId!!, hashed) ?: throw ResponseStatusException(HttpStatusCode.valueOf(403), "Refresh token not recognized (maybe used or expired?)")
         refreshTokenRepository.deleteByUserIdAndHashedToken(user.userId, hashed)
-        val newAccessToken = jwtService.generateAccessToken(userId)
-        val newRefreshToken = jwtService.generateRefreshToken(userId)
+        val newAccessToken = jwtService.generateAccessToken(userIdSubject)
+        val newRefreshToken = jwtService.generateRefreshToken(userIdSubject)
 //        storeRefreshToken(user.userId, newRefreshToken)
         return TokenPair(accessToken = newAccessToken, refreshToken = newRefreshToken)
     }

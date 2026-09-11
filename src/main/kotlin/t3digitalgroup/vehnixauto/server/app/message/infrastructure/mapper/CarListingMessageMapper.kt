@@ -23,13 +23,14 @@ fun CarListingThread.toEntity() = CarListingThreadEntity(
     updatedAt = this.updatedAt,
 )
 
-fun CarListingMessageEntity.toDomain() = CarListingMessage(
+fun CarListingMessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) = CarListingMessage(
     messageId = this.messageId,
     threadId = this.threadId,
     senderId = this.senderId,
     content = this.content,
     isRead = this.isRead,
     sentAt = this.sentAt,
+    attachments = attachments,
 )
 
 fun CarListingMessage.toEntity() = CarListingMessageEntity(

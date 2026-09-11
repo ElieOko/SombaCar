@@ -30,14 +30,15 @@ fun SupportThread.toEntity() = SupportThreadEntity(
     updatedAt = this.updatedAt
 )
 
-fun MessageEntity.toDomain() = Message(
+fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) = Message(
     messageId = this.messageId,
     threadId = this.threadId,
     senderType = this.senderType,
     senderId = this.senderId,
     content = this.content,
     isRead = this.isRead,
-    sentAt = this.sentAt
+    sentAt = this.sentAt,
+    attachments = attachments,
 )
 
 fun Message.toEntity() = MessageEntity(

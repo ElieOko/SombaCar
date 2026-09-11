@@ -2,14 +2,9 @@ package t3digitalgroup.vehnixauto.server.app.message.domain.models
 
 import java.time.LocalDateTime
 
-enum class CarListingThreadStatus {
-    OPEN,
-    CLOSED,
-}
-
-data class CarListingThread(
+data class PartListingThread(
     val threadId: Long? = null,
-    val carListingId: Long,
+    val partListingId: Long,
     val buyerId: Long,
     val sellerId: Long,
     val status: String = CarListingThreadStatus.OPEN.name,
@@ -17,7 +12,7 @@ data class CarListingThread(
     val updatedAt: LocalDateTime = LocalDateTime.now(),
 )
 
-data class CarListingMessage(
+data class PartListingMessage(
     val messageId: Long? = null,
     val threadId: Long,
     val senderId: Long,

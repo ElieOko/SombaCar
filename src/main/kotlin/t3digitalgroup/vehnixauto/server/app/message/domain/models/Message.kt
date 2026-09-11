@@ -32,7 +32,8 @@ data class Message(
     val threadId: Long,
     val senderType: String = MessageSenderType.USER.name,
     val senderId: Long? = null,
-    val content: String,
+    val content: String? = null,
     val isRead: Boolean = false,
-    val sentAt: LocalDateTime = LocalDateTime.now()
+    val sentAt: LocalDateTime = LocalDateTime.now(),
+    val attachments: List<MessageAttachment> = emptyList(),
 )

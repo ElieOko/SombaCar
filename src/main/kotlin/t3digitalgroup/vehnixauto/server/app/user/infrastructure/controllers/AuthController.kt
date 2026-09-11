@@ -257,9 +257,9 @@ class AuthController(
     ) : ResponseEntity<Map<String, String>> = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            val userConnect = auth.user()
-            val new = user.newPassword
-            authService.changePassword(userConnect?.first?.userId!!,new)
+            val userId = auth.userId()
+                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentification requise")
+            authService.changePassword(userId, user.newPassword)
             val message = mapOf("message" to "Mot de passe changé avec succès")
             ResponseEntity.ok(message)
         } finally {

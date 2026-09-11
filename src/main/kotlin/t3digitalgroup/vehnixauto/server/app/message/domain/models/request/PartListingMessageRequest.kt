@@ -3,16 +3,16 @@ package t3digitalgroup.vehnixauto.server.app.message.domain.models.request
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 
-data class CarListingThreadRequest(
+data class PartListingThreadRequest(
     @NotNull
-    val carListingId: Long,
+    val partListingId: Long,
     @NotNull
     val buyerId: Long,
     @NotBlank
     val initialMessage: String,
 )
 
-data class CarListingMessageRequest(
+data class PartListingMessageRequest(
     @NotNull
     val threadId: Long,
     @NotNull

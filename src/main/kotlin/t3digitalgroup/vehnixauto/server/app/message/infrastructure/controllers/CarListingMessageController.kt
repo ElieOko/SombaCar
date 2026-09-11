@@ -9,12 +9,14 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Profile
 import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartHttpServletRequest
 import t3digitalgroup.vehnixauto.server.app.message.application.services.*
 import t3digitalgroup.vehnixauto.server.app.message.domain.models.request.CarListingMessageRequest
 import t3digitalgroup.vehnixauto.server.route.GlobalRoute
 import t3digitalgroup.vehnixauto.server.route.message.CarListingMessageScope
 import t3digitalgroup.vehnixauto.server.security.monitoring.*
 import t3digitalgroup.vehnixauto.server.utils.*
+import t3digitalgroup.vehnixauto.server.utils.bufferMultipartFile
 
 @Tag(name = "Car Listing Message", description = "Messages de chat liés aux annonces de voitures")
 @RestController
@@ -24,6 +26,52 @@ class CarListingMessageController(
     private val service: CarListingMessageService,
     private val sentry: SentryService,
 ) {
+    @Operation(summary = "Envoyer un message dans une conversation (texte et/ou photos)")
+    @PostMapping(
+        CarListingMessageScope.PROTECTED,
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+    )
+    suspend fun sendMessageWithMedia(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        multipartRequest: MultipartHttpServletRequest,
+    ) = coroutineScope {
+        val startNanos = System.nanoTime()
+        try {
+            val threadId = multipartRequest.getParameter("threadId")?.toLongOrNull()
+                ?: throw org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "threadId est obligatoire",
+                )
+            val senderId = multipartRequest.getParameter("senderId")?.toLongOrNull()
+                ?: throw org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "senderId est obligatoire",
+                )
+            val content = multipartRequest.getParameter("content")
+            val files = multipartRequest.getFiles("files")
+                .filter { !it.isEmpty }
+                .map(::bufferMultipartFile)
+            ResponseEntity.status(HttpStatus.CREATED).body(
+                service.sendMessage(
+                    CarListingMessageRequest(threadId = threadId, senderId = senderId, content = content),
+                    files,
+                )
+            )
+        } finally {
+            sentry.callToMetric(
+                MetricModel(
+                    startNanos = startNanos,
+                    status = "200",
+                    route = "${request.method} /${request.requestURI}",
+                    countName = "api.carlistingmessage.sendmessagemedia.count",
+                    distributionName = "api.carlistingmessage.sendmessagemedia.latency",
+                )
+            )
+        }
+    }
+
     @Operation(summary = "Envoyer un message dans une conversation")
     @PostMapping(CarListingMessageScope.PROTECTED, produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun sendMessage(

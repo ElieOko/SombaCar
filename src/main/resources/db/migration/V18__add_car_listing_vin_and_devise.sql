@@ -1,0 +1,3 @@
+ALTER TABLE car_listings
+    ADD COLUMN IF NOT EXISTS number_vin VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS devise_id BIGINT;

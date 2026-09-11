@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.*
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import t3digitalgroup.vehnixauto.server.app.car.infrastructure.repositories.CarListingRepository
 import t3digitalgroup.vehnixauto.server.app.message.domain.models.*
@@ -90,8 +91,13 @@ class CarListingThreadService(
 class CarListingMessageService(
     private val threadRepository: CarListingThreadRepository,
     private val messageRepository: CarListingMessageRepository,
+    private val attachmentService: MessageAttachmentService,
 ) {
-    suspend fun sendMessage(request: CarListingMessageRequest): CarListingMessage {
+    suspend fun sendMessage(
+        request: CarListingMessageRequest,
+        files: List<MultipartFile> = emptyList(),
+    ): CarListingMessage {
+        validateMessagePayload(request.content, files)
         val thread = threadRepository.findById(request.threadId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation introuvable.")
         if (thread.status == CarListingThreadStatus.CLOSED.name) {
@@ -104,18 +110,28 @@ class CarListingMessageService(
         thread.updatedAt = LocalDateTime.now()
         threadRepository.save(thread)
 
-        return messageRepository.save(
+        val saved = messageRepository.save(
             CarListingMessage(
                 threadId = request.threadId,
                 senderId = request.senderId,
-                content = request.content,
+                content = request.content?.trim()?.takeIf { it.isNotEmpty() },
             ).toEntity()
-        ).toDomain()
+        )
+        val attachments = saved.messageId?.let { messageId ->
+            attachmentService.saveCarListingAttachments(messageId, files)
+        }.orEmpty()
+        return saved.toDomain(attachments)
     }
 
     suspend fun findByThreadIdForUser(threadId: Long, userId: Long): Flow<CarListingMessage> {
         assertParticipant(threadId, userId)
-        return messageRepository.findByThreadId(threadId).map { it.toDomain() }
+        val messages = messageRepository.findByThreadId(threadId).toList()
+        val attachmentsByMessageId = attachmentService
+            .findCarListingAttachments(messages.mapNotNull { it.messageId })
+            .groupBy { it.messageId }
+        return messages.map { message ->
+            message.toDomain(attachmentsByMessageId[message.messageId].orEmpty())
+        }.asFlow()
     }
 
     private suspend fun assertParticipant(threadId: Long, userId: Long) {
@@ -138,6 +154,19 @@ class CarListingMessageService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Vous ne pouvez pas marquer vos propres messages comme lus.")
         }
         entity.isRead = true
-        return messageRepository.save(entity).toDomain()
+        return messageRepository.save(entity).toDomain(
+            attachmentService.findCarListingAttachments(listOfNotNull(entity.messageId)),
+        )
+    }
+
+    private fun validateMessagePayload(content: String?, files: List<MultipartFile>) {
+        val hasContent = !content.isNullOrBlank()
+        val hasFiles = files.any { !it.isEmpty }
+        if (!hasContent && !hasFiles) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Le message doit contenir du texte ou au moins une photo.",
+            )
+        }
     }
 }
