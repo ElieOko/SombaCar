@@ -62,9 +62,16 @@ class MotoListingService(
         ).first()
     }
 
-    suspend fun findById(id: Long, includeDocuments: Boolean = false): MotoListing {
+    suspend fun findById(
+        id: Long,
+        includeDocuments: Boolean = false,
+        requireActive: Boolean = false,
+    ): MotoListing {
         val listing = listingRepository.findById(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        if (requireActive) {
+            ensurePubliclyVisible(listing.status)
+        }
         val motoModel = motoModelRepository.findById(listing.motoModelId)?.toDomain()
         return enrichListings(listOf(listing.toDomain(motoModel)), includeDocuments).first()
     }
@@ -113,6 +120,19 @@ class MotoListingService(
         val saved = listingRepository.save(entity)
         val motoModel = motoModelRepository.findById(saved.motoModelId)?.toDomain()
         return enrichListings(listOf(saved.toDomain(motoModel)), includeDocuments = false).first()
+    }
+
+    suspend fun findAllForAdmin(status: ListingStatus? = null, includeDocuments: Boolean = false): List<MotoListing> {
+        val flow = if (status != null) {
+            listingRepository.findAllByStatus(status.name)
+        } else {
+            listingRepository.findAllOrdered()
+        }
+        val listings = flow.map { listing ->
+            val motoModel = motoModelRepository.findById(listing.motoModelId)?.toDomain()
+            listing.toDomain(motoModel)
+        }.toList()
+        return enrichListings(listings, includeDocuments)
     }
 
     suspend fun updateCoordinates(listingId: Long, request: GeoCoordinatesRequest): MotoListing {

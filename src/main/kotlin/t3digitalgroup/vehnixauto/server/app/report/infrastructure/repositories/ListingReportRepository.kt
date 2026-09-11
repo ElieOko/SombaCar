@@ -32,6 +32,14 @@ interface ListingReportRepository : CoroutineCrudRepository<ListingReportEntity,
     )
     suspend fun findByReportedBy(userId: Long): Flow<ListingReportEntity>
 
+    @Query(
+        """
+        SELECT * FROM listing_reports
+        ORDER BY created_at DESC
+        """
+    )
+    suspend fun findAllOrdered(): Flow<ListingReportEntity>
+
     suspend fun existsByReportedByAndListingTypeAndListingId(
         reportedBy: Long,
         listingType: String,

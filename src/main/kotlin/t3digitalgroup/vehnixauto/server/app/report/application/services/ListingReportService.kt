@@ -64,6 +64,9 @@ class ListingReportService(
     suspend fun countByListing(listingType: OfferType, listingId: Long): Int =
         repository.countByListing(listingType.name, listingId).toInt()
 
+    suspend fun findAll(): List<ListingReport> =
+        repository.findAllOrdered().map { it.toDomain() }.toList()
+
     private suspend fun validateListing(listingType: OfferType, listingId: Long, reporterId: Long) {
         when (listingType) {
             OfferType.CAR -> {
@@ -97,6 +100,14 @@ class ListingReportService(
     }
 
     private suspend fun deactivateListing(listingType: OfferType, listingId: Long): Boolean {
+        val currentStatus = when (listingType) {
+            OfferType.CAR -> carListingService.findById(listingId).status
+            OfferType.PART -> partListingService.findById(listingId).status
+            OfferType.MOTO -> motoListingService.findById(listingId).status
+        }
+        if (currentStatus != ListingStatus.ACTIVE.name) {
+            return false
+        }
         when (listingType) {
             OfferType.CAR -> carListingService.updateStatus(listingId, ListingStatus.INACTIVE)
             OfferType.PART -> partListingService.updateStatus(listingId, ListingStatus.INACTIVE)
@@ -106,6 +117,6 @@ class ListingReportService(
     }
 
     companion object {
-        const val DEACTIVATION_THRESHOLD = 5
+        const val DEACTIVATION_THRESHOLD = 3
     }
 }

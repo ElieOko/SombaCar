@@ -26,4 +26,10 @@ interface PartListingRepository : CoroutineCrudRepository<PartListingEntity, Lon
         """
     )
     suspend fun searchActive(query: String): Flow<PartListingEntity>
+
+    @Query("SELECT * FROM part_listings ORDER BY created_at DESC")
+    suspend fun findAllOrdered(): Flow<PartListingEntity>
+
+    @Query("SELECT * FROM part_listings WHERE status = :status ORDER BY created_at DESC")
+    suspend fun findAllByStatus(status: String): Flow<PartListingEntity>
 }

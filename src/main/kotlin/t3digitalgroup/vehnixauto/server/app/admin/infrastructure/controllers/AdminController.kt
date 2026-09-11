@@ -19,6 +19,7 @@ import t3digitalgroup.vehnixauto.server.route.admin.AdminScope
 import t3digitalgroup.vehnixauto.server.security.AdminAuthorization
 import t3digitalgroup.vehnixauto.server.security.monitoring.MetricModel
 import t3digitalgroup.vehnixauto.server.security.monitoring.SentryService
+import t3digitalgroup.vehnixauto.server.utils.ListingStatus
 
 @Tag(name = "Admin", description = "Administration de la plateforme")
 @RestController
@@ -84,6 +85,181 @@ class AdminController(
     ) = adminAction(request, "api.admin.deactivatepart") {
         adminAuthorization.requireAdmin()
         ResponseEntity.ok(service.deactivatePartListing(id))
+    }
+
+    @Operation(summary = "Bannir une annonce voiture")
+    @PatchMapping("${AdminScope.PROTECTED}/cars/listings/{id}/ban", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun banCarListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.bancar") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.banCarListing(id))
+    }
+
+    @Operation(summary = "Bannir une annonce moto")
+    @PatchMapping("${AdminScope.PROTECTED}/motos/listings/{id}/ban", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun banMotoListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.banmoto") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.banMotoListing(id))
+    }
+
+    @Operation(summary = "Bannir une annonce pièce")
+    @PatchMapping("${AdminScope.PROTECTED}/parts/listings/{id}/ban", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun banPartListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.banpart") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.banPartListing(id))
+    }
+
+    @Operation(summary = "Détail d'une annonce voiture (admin, inclut désactivées et bannies)")
+    @GetMapping("${AdminScope.PROTECTED}/cars/listings/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findCarListingById(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.findcarbyid") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.findCarListingById(id))
+    }
+
+    @Operation(summary = "Détail d'une annonce moto (admin, inclut désactivées et bannies)")
+    @GetMapping("${AdminScope.PROTECTED}/motos/listings/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findMotoListingById(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.findmotobyid") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.findMotoListingById(id))
+    }
+
+    @Operation(summary = "Détail d'une annonce pièce (admin, inclut désactivées et bannies)")
+    @GetMapping("${AdminScope.PROTECTED}/parts/listings/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findPartListingById(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.findpartbyid") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.findPartListingById(id))
+    }
+
+    @Operation(summary = "Lister toutes les annonces voiture (admin, inclut les désactivées)")
+    @GetMapping("${AdminScope.PROTECTED}/cars/listings", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findAllCarListings(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @RequestParam(required = false) status: ListingStatus?,
+    ) = adminAction(request, "api.admin.findallcar") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.findAllCarListings(status))
+    }
+
+    @Operation(summary = "Lister toutes les annonces moto (admin, inclut les désactivées)")
+    @GetMapping("${AdminScope.PROTECTED}/motos/listings", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findAllMotoListings(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @RequestParam(required = false) status: ListingStatus?,
+    ) = adminAction(request, "api.admin.findallmoto") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.findAllMotoListings(status))
+    }
+
+    @Operation(summary = "Lister toutes les annonces pièce (admin, inclut les désactivées)")
+    @GetMapping("${AdminScope.PROTECTED}/parts/listings", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findAllPartListings(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @RequestParam(required = false) status: ListingStatus?,
+    ) = adminAction(request, "api.admin.findallpart") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.findAllPartListings(status))
+    }
+
+    @Operation(summary = "Réactiver une annonce voiture")
+    @PatchMapping("${AdminScope.PROTECTED}/cars/listings/{id}/activate", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun activateCarListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.activatecar") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.activateCarListing(id))
+    }
+
+    @Operation(summary = "Réactiver une annonce moto")
+    @PatchMapping("${AdminScope.PROTECTED}/motos/listings/{id}/activate", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun activateMotoListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.activatemoto") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.activateMotoListing(id))
+    }
+
+    @Operation(summary = "Réactiver une annonce pièce")
+    @PatchMapping("${AdminScope.PROTECTED}/parts/listings/{id}/activate", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun activatePartListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.activatepart") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.activatePartListing(id))
+    }
+
+    @Operation(summary = "Lever le bannissement d'une annonce voiture")
+    @PatchMapping("${AdminScope.PROTECTED}/cars/listings/{id}/unban", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun unbanCarListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.unbancar") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.unbanCarListing(id))
+    }
+
+    @Operation(summary = "Lever le bannissement d'une annonce moto")
+    @PatchMapping("${AdminScope.PROTECTED}/motos/listings/{id}/unban", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun unbanMotoListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.unbanmoto") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.unbanMotoListing(id))
+    }
+
+    @Operation(summary = "Lever le bannissement d'une annonce pièce")
+    @PatchMapping("${AdminScope.PROTECTED}/parts/listings/{id}/unban", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun unbanPartListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.unbanpart") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.unbanPartListing(id))
+    }
+
+    @Operation(summary = "Lister tous les types de comptes (admin)")
+    @GetMapping("${AdminScope.PROTECTED}/accounts/type", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findAllTypeAccounts(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+    ) = adminAction(request, "api.admin.findalltypeaccounts") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.findAllTypeAccounts())
     }
 
     @Operation(summary = "Créer un type de compte")

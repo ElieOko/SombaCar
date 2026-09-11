@@ -8,7 +8,7 @@ import org.springframework.data.relational.core.mapping.Table
 class TypeAccountEntity(
     @Id
     @Column("id")
-    val id: Long? = null,
+    var id: Long? = null,
     @Column("name")
-    val name: String
+    var name: String,
 )

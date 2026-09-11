@@ -107,7 +107,7 @@ class PartListingController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ResponseEntity.ok(service.findById(id))
+            ResponseEntity.ok(service.findById(id, requireActive = true))
         } finally {
             sentry.callToMetric(
                 MetricModel(

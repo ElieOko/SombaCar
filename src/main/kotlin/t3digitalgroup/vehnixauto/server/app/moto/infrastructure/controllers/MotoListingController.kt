@@ -108,7 +108,7 @@ class MotoListingController(
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ResponseEntity.ok(service.findById(id, includeDocuments))
+            ResponseEntity.ok(service.findById(id, includeDocuments, requireActive = true))
         } finally {
             sentry.callToMetric(
                 MetricModel(

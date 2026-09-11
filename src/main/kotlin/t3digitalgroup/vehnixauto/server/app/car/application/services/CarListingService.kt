@@ -64,9 +64,16 @@ class CarListingService(
         ).first()
     }
 
-    suspend fun findById(id: Long, includeDocuments: Boolean = false): CarListing {
+    suspend fun findById(
+        id: Long,
+        includeDocuments: Boolean = false,
+        requireActive: Boolean = false,
+    ): CarListing {
         val listing = listingRepository.findById(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        if (requireActive) {
+            ensurePubliclyVisible(listing.status)
+        }
         val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
         val listings = enrichListings(listOf(listing.toDomain(carModel)), includeDocuments)
         return listings.first()
@@ -116,6 +123,19 @@ class CarListingService(
         val saved = listingRepository.save(entity)
         val carModel = carModelRepository.findById(saved.carModelId)?.toDomain()
         return enrichListings(listOf(saved.toDomain(carModel)), includeDocuments = false).first()
+    }
+
+    suspend fun findAllForAdmin(status: ListingStatus? = null, includeDocuments: Boolean = false): List<CarListing> {
+        val flow = if (status != null) {
+            listingRepository.findAllByStatus(status.name)
+        } else {
+            listingRepository.findAllOrdered()
+        }
+        val listings = flow.map { listing ->
+            val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
+            listing.toDomain(carModel)
+        }.toList()
+        return enrichListings(listings, includeDocuments)
     }
 
     suspend fun updateCoordinates(listingId: Long, request: GeoCoordinatesRequest): CarListing {

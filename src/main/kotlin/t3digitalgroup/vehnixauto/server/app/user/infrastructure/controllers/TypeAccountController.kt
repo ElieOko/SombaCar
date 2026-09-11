@@ -2,7 +2,6 @@ package t3digitalgroup.vehnixauto.server.app.user.infrastructure.controllers
 
 import io.swagger.v3.oas.annotations.*
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.*
 import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
@@ -28,7 +27,7 @@ class TypeAccountController(
     suspend fun getAllTypeAccountE(request: HttpServletRequest, @PathVariable version: String): ApiResponse<List<TypeAccount>> = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ApiResponse(service.getAll().toList())
+            ApiResponse(service.getAll())
         } finally {
             sentry.callToMetric(
                 MetricModel(

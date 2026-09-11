@@ -11,7 +11,8 @@ enum class ListingStatus {
     SOLD,
     RENTED,
     EXCHANGED,
-    INACTIVE
+    INACTIVE,
+    BANNED,
 }
 
 enum class ItemCondition {

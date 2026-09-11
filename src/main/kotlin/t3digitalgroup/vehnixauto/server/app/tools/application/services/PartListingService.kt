@@ -15,6 +15,7 @@ import t3digitalgroup.vehnixauto.server.utils.GeoCoordinatesRequest
 import t3digitalgroup.vehnixauto.server.utils.ListingStatus
 import t3digitalgroup.vehnixauto.server.utils.ListingType
 import t3digitalgroup.vehnixauto.server.utils.Mode
+import t3digitalgroup.vehnixauto.server.utils.ensurePubliclyVisible
 import t3digitalgroup.vehnixauto.server.utils.validateGeoCoordinates
 import java.time.LocalDateTime
 
@@ -48,10 +49,13 @@ class PartListingService(
         return repository.save(entity).toDomain()
     }
 
-    suspend fun findById(id: Long): PartListing {
-        val listing = repository.findById(id)?.toDomain()
+    suspend fun findById(id: Long, requireActive: Boolean = false): PartListing {
+        val entity = repository.findById(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Pièce introuvable.")
-        return enrichListings(listOf(listing)).first()
+        if (requireActive) {
+            ensurePubliclyVisible(entity.status)
+        }
+        return enrichListings(listOf(entity.toDomain())).first()
     }
 
     suspend fun findByUserId(userId: Long): List<PartListing> {
@@ -76,6 +80,15 @@ class PartListingService(
         entity.updatedAt = LocalDateTime.now()
         val saved = repository.save(entity).toDomain()
         return enrichListings(listOf(saved)).first()
+    }
+
+    suspend fun findAllForAdmin(status: ListingStatus? = null): List<PartListing> {
+        val flow = if (status != null) {
+            repository.findAllByStatus(status.name)
+        } else {
+            repository.findAllOrdered()
+        }
+        return enrichListings(flow.map { it.toDomain() }.toList())
     }
 
     suspend fun updateCoordinates(partListingId: Long, request: GeoCoordinatesRequest): PartListing {

@@ -25,4 +25,10 @@ interface MotoListingRepository : CoroutineCrudRepository<MotoListingEntity, Lon
         """
     )
     suspend fun findActiveByElectricAndCondition(isElectric: Boolean, condition: String): Flow<MotoListingEntity>
+
+    @Query("SELECT * FROM moto_listings ORDER BY created_at DESC")
+    suspend fun findAllOrdered(): Flow<MotoListingEntity>
+
+    @Query("SELECT * FROM moto_listings WHERE status = :status ORDER BY created_at DESC")
+    suspend fun findAllByStatus(status: String): Flow<MotoListingEntity>
 }

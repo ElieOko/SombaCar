@@ -16,18 +16,21 @@ class Auth(
     private val account : AccountService,
     private val mutlipleAccount : AccountUserService
 ) {
-    suspend fun user(): Pair<UserDto?, MutableList<Boolean>>?{
+    suspend fun userId(): Long? =
+        SecurityContextHolder.getContext().authentication?.name?.let(JwtUserIdSupport::parseSubject)
+
+    suspend fun user(): Pair<UserDto?, MutableList<Boolean>>? {
         val allowList = mutableListOf<Boolean>()
-        SecurityContextHolder.getContext().authentication?.name?.let {
-            val userId = it.toInt(16).toLong()
-            val data = repository.findById(userId)
-            mutlipleAccount.findMultipleAccountUser(userId).forEach{c->allowList.add(account.isAllow(c.accountId))}
-            return Pair(data?.toDomain(),allowList)
+        val userId = userId() ?: return null
+        val data = repository.findById(userId)
+        mutlipleAccount.findMultipleAccountUser(userId).forEach { c ->
+            allowList.add(account.isAllow(c.accountId))
         }
-        return null
+        return Pair(data?.toDomain(), allowList)
     }
+
     suspend fun userStom(principal: Principal): UserDto? {
-        val data = repository.findById(principal.name.toInt().toLong())
+        val data = repository.findById(JwtUserIdSupport.parseSubject(principal.name))
         return data?.toDomain()
     }
 }

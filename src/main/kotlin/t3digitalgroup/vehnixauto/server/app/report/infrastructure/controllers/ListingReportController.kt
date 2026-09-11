@@ -86,6 +86,21 @@ class ListingReportController(
         }
     }
 
+    @Operation(summary = "Liste de tous les signalements (admin)")
+    @GetMapping("${ListingReportScope.PROTECTED}/all", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun findAll(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+    ) = coroutineScope {
+        val startNanos = System.nanoTime()
+        try {
+            adminAuthorization.requireAdmin()
+            ApiResponse(service.findAll())
+        } finally {
+            recordMetric(request, startNanos, "api.listingreport.findalladmin")
+        }
+    }
+
     @Operation(summary = "Liste des signalements d'une annonce (admin)")
     @GetMapping("${ListingReportScope.PROTECTED}/{listingType}/{listingId}", produces = [MediaType.APPLICATION_JSON_VALUE])
     suspend fun findByListing(

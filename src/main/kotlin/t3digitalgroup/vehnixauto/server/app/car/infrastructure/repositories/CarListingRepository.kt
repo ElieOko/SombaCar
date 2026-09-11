@@ -25,4 +25,10 @@ interface CarListingRepository : CoroutineCrudRepository<CarListingEntity, Long>
         """
     )
     suspend fun findActiveByElectricAndCondition(isElectric: Boolean, condition: String): Flow<CarListingEntity>
+
+    @Query("SELECT * FROM car_listings ORDER BY created_at DESC")
+    suspend fun findAllOrdered(): Flow<CarListingEntity>
+
+    @Query("SELECT * FROM car_listings WHERE status = :status ORDER BY created_at DESC")
+    suspend fun findAllByStatus(status: String): Flow<CarListingEntity>
 }
