@@ -28,7 +28,10 @@ repositories {
 extra["springCloudGcpVersion"] = "7.3.1"
 extra["springCloudVersion"] = "2025.0.0"
 extra["sentryVersion"] = "8.27.0"
+extra["springBootAdminVersion"] = "4.1.2"
 dependencies {
+	//admin
+	implementation("de.codecentric:spring-boot-admin-starter-client")
 	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.springframework.boot:spring-boot-starter-quartz")
@@ -106,6 +109,7 @@ dependencyManagement {
     imports {
         mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${property("springCloudGcpVersion")}")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+		mavenBom("de.codecentric:spring-boot-admin-dependencies:${property("springBootAdminVersion")}")
 //		mavenBom("io.sentry:sentry-bom:${property("sentryVersion")}")
     }
 }

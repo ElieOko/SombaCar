@@ -34,6 +34,7 @@ class JwtAuthFilter(
         val path = request.requestURI
         val publicPaths = listOf(
             "/api/v1/public/**",
+            "/actuator/**",
             "/",
             "/swagger-ui/**",
             "/swagger-ui.html/*",
