@@ -12,6 +12,11 @@ import org.springframework.web.bind.annotation.*
 import t3digitalgroup.vehnixauto.server.app.admin.application.services.AdminService
 import t3digitalgroup.vehnixauto.server.app.admin.domain.models.request.ChangeUserRoleRequest
 import t3digitalgroup.vehnixauto.server.app.admin.domain.models.request.UserLockRequest
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.AssignDriverRequest
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.CarListingAdminUpdateRequest
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.CarModelAdminUpdateRequest
+import t3digitalgroup.vehnixauto.server.app.moto.domain.models.request.MotoListingAdminUpdateRequest
+import t3digitalgroup.vehnixauto.server.app.moto.domain.models.request.MotoModelAdminUpdateRequest
 import t3digitalgroup.vehnixauto.server.app.user.domain.models.Account
 import t3digitalgroup.vehnixauto.server.app.user.domain.models.TypeAccount
 import t3digitalgroup.vehnixauto.server.route.GlobalRoute
@@ -282,6 +287,122 @@ class AdminController(
     ) = adminAction(request, "api.admin.createaccount") {
         adminAuthorization.requireAdmin()
         ResponseEntity.ok(service.createAccount(body))
+    }
+
+    @Operation(summary = "Modifier une annonce voiture (admin)")
+    @PutMapping("${AdminScope.PROTECTED}/cars/listings/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun updateCarListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: CarListingAdminUpdateRequest,
+    ) = adminAction(request, "api.admin.updatecar") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.updateCarListing(id, body))
+    }
+
+    @Operation(summary = "Modifier une annonce moto (admin)")
+    @PutMapping("${AdminScope.PROTECTED}/motos/listings/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun updateMotoListing(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: MotoListingAdminUpdateRequest,
+    ) = adminAction(request, "api.admin.updatemoto") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.updateMotoListing(id, body))
+    }
+
+    @Operation(summary = "Marquer une voiture comme VENDU (conserve l'historique)")
+    @PatchMapping("${AdminScope.PROTECTED}/cars/listings/{id}/sold", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun markCarSold(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.markcarsold") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.markCarSold(id))
+    }
+
+    @Operation(summary = "Marquer une moto comme VENDU")
+    @PatchMapping("${AdminScope.PROTECTED}/motos/listings/{id}/sold", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun markMotoSold(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.markmotosold") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.markMotoSold(id))
+    }
+
+    @Operation(summary = "Marquer une voiture en négociation / réservation")
+    @PatchMapping("${AdminScope.PROTECTED}/cars/listings/{id}/negotiating", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun markCarNegotiating(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.markcarnegotiating") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.markCarNegotiating(id))
+    }
+
+    @Operation(summary = "Marquer une moto en négociation / réservation")
+    @PatchMapping("${AdminScope.PROTECTED}/motos/listings/{id}/negotiating", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun markMotoNegotiating(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+    ) = adminAction(request, "api.admin.markmotonegotiating") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.markMotoNegotiating(id))
+    }
+
+    @Operation(summary = "Assigner un chauffeur (utilisateur) à une location voiture — optionnel, complétable plus tard")
+    @PatchMapping("${AdminScope.PROTECTED}/cars/listings/{id}/driver", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun assignCarDriver(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: AssignDriverRequest,
+    ) = adminAction(request, "api.admin.assigncardriver") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.assignCarDriver(id, body))
+    }
+
+    @Operation(summary = "Assigner un chauffeur à une location moto")
+    @PatchMapping("${AdminScope.PROTECTED}/motos/listings/{id}/driver", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun assignMotoDriver(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: AssignDriverRequest,
+    ) = adminAction(request, "api.admin.assignmotodriver") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.assignMotoDriver(id, body))
+    }
+
+    @Operation(summary = "Modifier un modèle de voiture")
+    @PutMapping("${AdminScope.PROTECTED}/cars/models/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun updateCarModel(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: CarModelAdminUpdateRequest,
+    ) = adminAction(request, "api.admin.updatecarmodel") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.updateCarModel(id, body))
+    }
+
+    @Operation(summary = "Modifier un modèle de moto")
+    @PutMapping("${AdminScope.PROTECTED}/motos/models/{id}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun updateMotoModel(
+        request: HttpServletRequest,
+        @PathVariable version: String,
+        @PathVariable id: Long,
+        @Valid @RequestBody body: MotoModelAdminUpdateRequest,
+    ) = adminAction(request, "api.admin.updatemotomodel") {
+        adminAuthorization.requireAdmin()
+        ResponseEntity.ok(service.updateMotoModel(id, body))
     }
 
     private suspend fun adminAction(

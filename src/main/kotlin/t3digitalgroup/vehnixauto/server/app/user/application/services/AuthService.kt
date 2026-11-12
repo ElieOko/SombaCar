@@ -56,15 +56,26 @@ class AuthService(
         val refreshToken: String
     )
     suspend fun register(user: User): UserDto? = coroutineScope {
-        var state = false
-        if (user.email != null){
-            if(user.email.isNotEmpty()){
-                if(userRepository.findByPhoneOrEmail(user.email) != null) throw ResponseStatusException(HttpStatus.CONFLICT, "Cette adresse mail est déjà associé à un compte existant.")
-                state = true
+        val email = user.email?.trim()?.takeIf { it.isNotEmpty() }
+        val phoneRaw = user.phone?.trim()?.takeIf { it.isNotEmpty() }
+        if (email == null && phoneRaw == null) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Renseignez au moins un email ou un numéro de téléphone.")
+        }
+        if (email != null) {
+            if (!isEmailValid(email)) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalide.")
+            }
+            if (userRepository.findByPhoneOrEmail(email) != null) {
+                throw ResponseStatusException(HttpStatus.CONFLICT, "Cette adresse mail est déjà associée à un compte existant.")
             }
         }
-        if (!state) throw ResponseStatusException(HttpStatus.CONFLICT, "Vous devez renseigner l'email")
-        val entity = user.toEntity().apply {
+        val normalizedPhone = phoneRaw?.let { normalizeAndValidatePhoneNumberUniversal(it) }
+        if (normalizedPhone != null) {
+            if (userRepository.findByPhoneOrEmail(normalizedPhone) != null) {
+                throw ResponseStatusException(HttpStatus.CONFLICT, "Ce numéro de téléphone est déjà associé à un compte existant.")
+            }
+        }
+        val entity = user.copy(email = email, phone = normalizedPhone ?: phoneRaw).toEntity().apply {
             password = hashEncoder.encode(user.password)
         }
         log.info("Creating user ${user.userId}")

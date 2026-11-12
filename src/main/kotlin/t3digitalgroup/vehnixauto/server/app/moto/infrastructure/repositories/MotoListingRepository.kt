@@ -12,6 +12,26 @@ interface MotoListingRepository : CoroutineCrudRepository<MotoListingEntity, Lon
     @Query("SELECT * FROM moto_listings WHERE listing_type = :listingType AND status = 'ACTIVE' ORDER BY created_at DESC")
     suspend fun findActiveByListingType(listingType: String): Flow<MotoListingEntity>
 
+    @Query(
+        """
+        SELECT * FROM moto_listings
+        WHERE listing_type = :listingType
+          AND status = :status
+        ORDER BY created_at DESC
+        """
+    )
+    suspend fun findByListingTypeAndStatus(listingType: String, status: String): Flow<MotoListingEntity>
+
+    @Query(
+        """
+        SELECT * FROM moto_listings
+        WHERE listing_type = :listingType
+          AND status IN ('ACTIVE', 'NEGOTIATING', 'SOLD', 'RENTED')
+        ORDER BY created_at DESC
+        """
+    )
+    suspend fun findPublicByListingType(listingType: String): Flow<MotoListingEntity>
+
     @Query("SELECT * FROM moto_listings WHERE moto_model_id = :motoModelId AND status = 'ACTIVE' ORDER BY created_at DESC")
     suspend fun findActiveByMotoModelId(motoModelId: Long): Flow<MotoListingEntity>
 

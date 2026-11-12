@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import t3digitalgroup.vehnixauto.server.app.car.domain.models.*
 import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.*
+import t3digitalgroup.vehnixauto.server.app.car.infrastructure.entities.CarModelEntity
 import t3digitalgroup.vehnixauto.server.app.car.infrastructure.mapper.*
 import t3digitalgroup.vehnixauto.server.app.car.infrastructure.repositories.CarModelRepository
 import t3digitalgroup.vehnixauto.server.utils.Mode
@@ -28,6 +29,28 @@ class CarModelService(
             bodyType = request.bodyType
         ).toEntity()
         return repository.save(entity).toDomain()
+    }
+
+    suspend fun adminUpdate(id: Long, request: CarModelAdminUpdateRequest): CarModel {
+        val existing = repository.findById(id)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Modèle introuvable.")
+        val brand = request.brand ?: existing.brand
+        val model = request.model ?: existing.model
+        if (brand != existing.brand || model != existing.model) {
+            val conflict = repository.findByBrandAndModel(brand, model)
+            if (conflict != null && conflict.carModelId != id) {
+                throw ResponseStatusException(HttpStatus.CONFLICT, "Ce modèle existe déjà.")
+            }
+        }
+        val updated = CarModelEntity(
+            carModelId = existing.carModelId,
+            brand = brand,
+            model = model,
+            generation = request.generation ?: existing.generation,
+            bodyType = request.bodyType ?: existing.bodyType,
+            createdAt = existing.createdAt,
+        )
+        return repository.save(updated).toDomain()
     }
 
     suspend fun findById(id: Long): CarModel {

@@ -153,10 +153,19 @@ class MotoListingController(
         @PathVariable version: String,
         @PathVariable listingType: ListingType,
         @RequestParam(defaultValue = "false") includeDocuments: Boolean,
+        @RequestParam(required = false) status: ListingStatus?,
+        @RequestParam(defaultValue = "false") includeHistory: Boolean,
     ) = coroutineScope {
         val startNanos = System.nanoTime()
         try {
-            ApiResponse(service.findByListingType(listingType, includeDocuments))
+            ApiResponse(
+                service.findByListingType(
+                    listingType = listingType,
+                    includeDocuments = includeDocuments,
+                    status = status,
+                    includeSoldHistory = includeHistory,
+                )
+            )
         } finally {
             sentry.callToMetric(
                 MetricModel(

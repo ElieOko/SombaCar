@@ -46,18 +46,34 @@ class AuthController(
         val startNanos = System.nanoTime()
         val redis = RedisStorage()
         try {
-            if (!isEmailValid(req.email)) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Mail invalid!.")
+            val hasEmail = !req.email.isNullOrBlank()
+            val hasPhone = !req.phone.isNullOrBlank()
+            if (!hasEmail && !hasPhone) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Renseignez au moins un email ou un numéro de téléphone.")
+            }
+            if (hasEmail && !isEmailValid(req.email)) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalide.")
+            }
             val userSystem = req.toDomain()
             val state = req.confirmPassword == req.password
             if (!state) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe invalide.")
             val data = authService.register(userSystem)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Création de compte impossible.")
             val generator = 6.generateOtp()
-            redis.storeRedisData(data?.email!!,generator,1140)
-            val sendState = senderMailAuth.sendMail(to = data.email!!,otp = generator, time =  "4")
-            log.info("$sendState************")
+            val otpKey = data.email?.takeIf { it.isNotBlank() } ?: data.phone
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Identifiant OTP introuvable.")
+            redis.storeRedisData(otpKey, generator, 1140)
+            val message = if (!data.email.isNullOrBlank()) {
+                val sendState = senderMailAuth.sendMail(to = data.email!!, otp = generator, time = "4")
+                log.info("$sendState************")
+                "Votre compte a été créé. Un code de vérification a été envoyé à votre adresse e-mail."
+            } else {
+                runCatching { authService.generateOTP(data.phone!!) }
+                "Votre compte a été créé. Un code de vérification a été envoyé à votre numéro de téléphone."
+            }
             val response = mapOf(
                 "user" to data,
-                "message" to "Votre compte utilisateur principal a été créé avec succès. Par ailleurs, nous avons envoyé un code de vérification à votre adresse e-mail."
+                "message" to message,
             )
             ResponseEntity.status(201).body(response)
         } finally {

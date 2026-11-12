@@ -12,6 +12,26 @@ interface CarListingRepository : CoroutineCrudRepository<CarListingEntity, Long>
     @Query("SELECT * FROM car_listings WHERE listing_type = :listingType AND status = 'ACTIVE' ORDER BY created_at DESC")
     suspend fun findActiveByListingType(listingType: String): Flow<CarListingEntity>
 
+    @Query(
+        """
+        SELECT * FROM car_listings
+        WHERE listing_type = :listingType
+          AND status = :status
+        ORDER BY created_at DESC
+        """
+    )
+    suspend fun findByListingTypeAndStatus(listingType: String, status: String): Flow<CarListingEntity>
+
+    @Query(
+        """
+        SELECT * FROM car_listings
+        WHERE listing_type = :listingType
+          AND status IN ('ACTIVE', 'NEGOTIATING', 'SOLD', 'RENTED')
+        ORDER BY created_at DESC
+        """
+    )
+    suspend fun findPublicByListingType(listingType: String): Flow<CarListingEntity>
+
     @Query("SELECT * FROM car_listings WHERE car_model_id = :carModelId AND status = 'ACTIVE' ORDER BY created_at DESC")
     suspend fun findActiveByCarModelId(carModelId: Long): Flow<CarListingEntity>
 
@@ -31,4 +51,15 @@ interface CarListingRepository : CoroutineCrudRepository<CarListingEntity, Long>
 
     @Query("SELECT * FROM car_listings WHERE status = :status ORDER BY created_at DESC")
     suspend fun findAllByStatus(status: String): Flow<CarListingEntity>
+
+    @Query(
+        """
+        SELECT * FROM car_listings
+        WHERE (:query IS NULL OR LOWER(description) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(city) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(plate_number) LIKE LOWER(CONCAT('%', :query, '%')))
+        ORDER BY created_at DESC
+        """
+    )
+    suspend fun searchForAdmin(query: String?): Flow<CarListingEntity>
 }

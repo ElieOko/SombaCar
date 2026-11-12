@@ -13,39 +13,51 @@ class CarListingEntity(
     @Column("user_id")
     val userId: Long,
     @Column("car_model_id")
-    val carModelId: Long,
+    var carModelId: Long,
     @Column("listing_type")
-    val listingType: String = ListingType.SALE.name,
+    var listingType: String = ListingType.SALE.name,
     @Column("year")
-    val year: Int,
+    var year: Int? = null,
     @Column("is_electric")
-    val isElectric: Boolean = false,
+    var isElectric: Boolean = false,
     @Column("mileage_km")
-    val mileageKm: Long = 0,
+    var mileageKm: Long? = null,
     @Column("condition")
-    val condition: String = ItemCondition.USED.name,
+    var condition: String = ItemCondition.USED.name,
     @Column("plate_number")
-    val plateNumber: String? = null,
+    var plateNumber: String? = null,
     @Column("number_vin")
-    val numberVin: String? = null,
+    var numberVin: String? = null,
     @Column("color")
-    val color: String? = null,
+    var color: String? = null,
     @Column("seats")
-    val seats: Int? = null,
+    var seats: Int? = null,
     @Column("price")
-    val price: String? = null,
+    var price: String? = null,
     @Column("devise_id")
-    val deviseId: Long? = null,
+    var deviseId: Long? = null,
     @Column("rent_price_per_day")
-    val rentPricePerDay: String? = null,
+    var rentPricePerDay: String? = null,
+    @Column("rent_price_per_week")
+    var rentPricePerWeek: String? = null,
+    @Column("rent_price_per_month")
+    var rentPricePerMonth: String? = null,
+    @Column("transmission")
+    var transmission: String? = null,
+    @Column("with_driver")
+    var withDriver: Boolean = false,
+    @Column("driver_user_id")
+    var driverUserId: Long? = null,
+    @Column("rental_available")
+    var rentalAvailable: Boolean = true,
     @Column("exchange_description")
-    val exchangeDescription: String? = null,
+    var exchangeDescription: String? = null,
     @Column("description")
-    val description: String? = null,
+    var description: String? = null,
     @Column("city")
-    val city: String? = null,
+    var city: String? = null,
     @Column("country")
-    val country: String = "Democratic Republic of the Congo",
+    var country: String = "Democratic Republic of the Congo",
     @Column("latitude")
     var latitude: Double? = null,
     @Column("longitude")
