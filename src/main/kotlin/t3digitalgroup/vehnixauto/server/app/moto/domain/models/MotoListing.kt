@@ -1,6 +1,5 @@
 package t3digitalgroup.vehnixauto.server.app.moto.domain.models
 
-import t3digitalgroup.vehnixauto.server.app.car.domain.models.Document
 import t3digitalgroup.vehnixauto.server.utils.ItemCondition
 import t3digitalgroup.vehnixauto.server.utils.ListingStatus
 import t3digitalgroup.vehnixauto.server.utils.ListingType
@@ -11,9 +10,9 @@ data class MotoListing(
     val userId: Long,
     val motoModelId: Long,
     val listingType: String = ListingType.SALE.name,
-    val year: Int,
+    val year: Int? = null,
     val isElectric: Boolean = false,
-    val mileageKm: Long = 0,
+    val mileageKm: Long? = null,
     val numberVin: String? = null,
     val condition: String = ItemCondition.USED.name,
     val plateNumber: String? = null,
@@ -22,6 +21,12 @@ data class MotoListing(
     val price: String? = null,
     val devise: Long? = null,
     val rentPricePerDay: String? = null,
+    val rentPricePerWeek: String? = null,
+    val rentPricePerMonth: String? = null,
+    val transmission: String? = null,
+    val withDriver: Boolean = false,
+    val driverUserId: Long? = null,
+    val rentalAvailable: Boolean = true,
     val exchangeDescription: String? = null,
     val description: String? = null,
     val city: String? = null,

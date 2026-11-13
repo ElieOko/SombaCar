@@ -6,7 +6,14 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import t3digitalgroup.vehnixauto.server.app.car.application.services.CarListingService
+import t3digitalgroup.vehnixauto.server.app.car.application.services.CarModelService
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.AssignDriverRequest
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.CarListingAdminUpdateRequest
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.CarModelAdminUpdateRequest
 import t3digitalgroup.vehnixauto.server.app.moto.application.services.MotoListingService
+import t3digitalgroup.vehnixauto.server.app.moto.application.services.MotoModelService
+import t3digitalgroup.vehnixauto.server.app.moto.domain.models.request.MotoListingAdminUpdateRequest
+import t3digitalgroup.vehnixauto.server.app.moto.domain.models.request.MotoModelAdminUpdateRequest
 import t3digitalgroup.vehnixauto.server.app.report.application.services.ListingReportService
 import t3digitalgroup.vehnixauto.server.app.tools.application.services.PartListingService
 import t3digitalgroup.vehnixauto.server.app.user.application.services.AccountService
@@ -33,7 +40,9 @@ class AdminService(
     private val accountService: AccountService,
     private val typeAccountService: TypeAccountService,
     private val carListingService: CarListingService,
+    private val carModelService: CarModelService,
     private val motoListingService: MotoListingService,
+    private val motoModelService: MotoModelService,
     private val partListingService: PartListingService,
     private val listingReportService: ListingReportService,
 ) {
@@ -124,6 +133,32 @@ class AdminService(
 
     suspend fun createAccount(account: Account): Account =
         accountService.save(account)
+
+    suspend fun updateCarListing(listingId: Long, request: CarListingAdminUpdateRequest) =
+        carListingService.adminUpdate(listingId, request)
+
+    suspend fun updateMotoListing(listingId: Long, request: MotoListingAdminUpdateRequest) =
+        motoListingService.adminUpdate(listingId, request)
+
+    suspend fun markCarSold(listingId: Long) = carListingService.markSold(listingId)
+
+    suspend fun markMotoSold(listingId: Long) = motoListingService.markSold(listingId)
+
+    suspend fun markCarNegotiating(listingId: Long) = carListingService.markNegotiating(listingId)
+
+    suspend fun markMotoNegotiating(listingId: Long) = motoListingService.markNegotiating(listingId)
+
+    suspend fun assignCarDriver(listingId: Long, request: AssignDriverRequest) =
+        carListingService.assignDriver(listingId, request)
+
+    suspend fun assignMotoDriver(listingId: Long, request: AssignDriverRequest) =
+        motoListingService.assignDriver(listingId, request)
+
+    suspend fun updateCarModel(modelId: Long, request: CarModelAdminUpdateRequest) =
+        carModelService.adminUpdate(modelId, request)
+
+    suspend fun updateMotoModel(modelId: Long, request: MotoModelAdminUpdateRequest) =
+        motoModelService.adminUpdate(modelId, request)
 
     private suspend fun reactivateListing(listingType: OfferType, listingId: Long) = when (listingType) {
         OfferType.CAR -> activateCarListing(listingId)

@@ -56,8 +56,10 @@ dependencies {
     implementation("com.googlecode.libphonenumber:libphonenumber:8.13.38")
     // crypto
     implementation("org.springframework.security:spring-security-crypto")
-    //websocket
+	//websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+    //kafka (tracking / events — activé via app.kafka.enabled=true)
+    implementation("org.springframework.kafka:spring-kafka")
     //gcs
     implementation("com.google.cloud:spring-cloud-gcp-starter-storage")
     //twilio

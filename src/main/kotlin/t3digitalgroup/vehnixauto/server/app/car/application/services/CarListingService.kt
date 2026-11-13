@@ -30,6 +30,10 @@ class CarListingService(
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable.")
         val carModel = carModelRepository.findById(request.carModelId)
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Modèle de voiture introuvable.")
+        request.driverUserId?.let { driverId ->
+            userRepository.findById(driverId)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Chauffeur introuvable.")
+        }
 
         val entity = CarListing(
             userId = request.userId,
@@ -43,7 +47,15 @@ class CarListingService(
             color = request.color,
             seats = request.seats,
             price = request.price,
+            devise = request.devise,
+            numberVin = request.numberVin,
             rentPricePerDay = request.rentPricePerDay,
+            rentPricePerWeek = request.rentPricePerWeek,
+            rentPricePerMonth = request.rentPricePerMonth,
+            transmission = request.transmission?.name,
+            withDriver = request.withDriver || request.driverUserId != null,
+            driverUserId = request.driverUserId,
+            rentalAvailable = request.rentalAvailable,
             exchangeDescription = request.exchangeDescription,
             description = request.description,
             city = request.city,
@@ -63,6 +75,85 @@ class CarListingService(
             includeDocuments = !request.documentIds.isNullOrEmpty(),
         ).first()
     }
+
+    suspend fun adminUpdate(listingId: Long, request: CarListingAdminUpdateRequest): CarListing {
+        val entity = listingRepository.findById(listingId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        request.carModelId?.let { modelId ->
+            carModelRepository.findById(modelId)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Modèle de voiture introuvable.")
+            entity.carModelId = modelId
+        }
+        if (request.clearYear) entity.year = null else request.year?.let { entity.year = it }
+        request.isElectric?.let { entity.isElectric = it }
+        if (request.clearMileage) entity.mileageKm = null else request.mileageKm?.let { entity.mileageKm = it }
+        request.condition?.let { entity.condition = it.name }
+        request.plateNumber?.let { entity.plateNumber = it }
+        request.color?.let { entity.color = it }
+        request.seats?.let { entity.seats = it }
+        request.price?.let { entity.price = it }
+        request.devise?.let { entity.deviseId = it }
+        request.numberVin?.let { entity.numberVin = it }
+        request.rentPricePerDay?.let { entity.rentPricePerDay = it }
+        request.rentPricePerWeek?.let { entity.rentPricePerWeek = it }
+        request.rentPricePerMonth?.let { entity.rentPricePerMonth = it }
+        request.transmission?.let { entity.transmission = it.name }
+        request.withDriver?.let { entity.withDriver = it }
+        if (request.clearDriver) {
+            entity.driverUserId = null
+            entity.withDriver = false
+        } else {
+            request.driverUserId?.let { driverId ->
+                userRepository.findById(driverId)
+                    ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Chauffeur introuvable.")
+                entity.driverUserId = driverId
+                entity.withDriver = true
+            }
+        }
+        request.rentalAvailable?.let { entity.rentalAvailable = it }
+        request.exchangeDescription?.let { entity.exchangeDescription = it }
+        request.description?.let { entity.description = it }
+        request.city?.let { entity.city = it }
+        request.country?.let { entity.country = it }
+        if (request.latitude != null || request.longitude != null) {
+            validateGeoCoordinates(request.latitude ?: entity.latitude, request.longitude ?: entity.longitude)
+            request.latitude?.let { entity.latitude = it }
+            request.longitude?.let { entity.longitude = it }
+        }
+        request.status?.let { entity.status = it.name }
+        entity.updatedAt = LocalDateTime.now()
+        val saved = listingRepository.save(entity)
+        request.documentIds?.let { ids ->
+            carDocumentService.linkDocuments(listingId, ids)
+        }
+        val carModel = carModelRepository.findById(saved.carModelId)?.toDomain()
+        return enrichListings(listOf(saved.toDomain(carModel)), includeDocuments = true).first()
+    }
+
+    suspend fun assignDriver(listingId: Long, request: AssignDriverRequest): CarListing {
+        val entity = listingRepository.findById(listingId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        if (entity.listingType != ListingType.RENT.name) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Le chauffeur ne s'applique qu'aux annonces de location.")
+        }
+        if (request.driverUserId == null) {
+            entity.driverUserId = null
+            entity.withDriver = request.withDriver
+        } else {
+            userRepository.findById(request.driverUserId)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Chauffeur introuvable.")
+            entity.driverUserId = request.driverUserId
+            entity.withDriver = true
+        }
+        entity.updatedAt = LocalDateTime.now()
+        val saved = listingRepository.save(entity)
+        val carModel = carModelRepository.findById(saved.carModelId)?.toDomain()
+        return enrichListings(listOf(saved.toDomain(carModel)), includeDocuments = false).first()
+    }
+
+    suspend fun markSold(listingId: Long): CarListing = updateStatus(listingId, ListingStatus.SOLD)
+
+    suspend fun markNegotiating(listingId: Long): CarListing = updateStatus(listingId, ListingStatus.NEGOTIATING)
 
     suspend fun findById(
         id: Long,
@@ -87,8 +178,18 @@ class CarListingService(
         return enrichListings(listings, includeDocuments)
     }
 
-    suspend fun findByListingType(listingType: ListingType, includeDocuments: Boolean = false): List<CarListing> {
-        val listings = listingRepository.findActiveByListingType(listingType.name).map { listing ->
+    suspend fun findByListingType(
+        listingType: ListingType,
+        includeDocuments: Boolean = false,
+        status: ListingStatus? = null,
+        includeSoldHistory: Boolean = false,
+    ): List<CarListing> {
+        val flow = when {
+            status != null -> listingRepository.findByListingTypeAndStatus(listingType.name, status.name)
+            includeSoldHistory -> listingRepository.findPublicByListingType(listingType.name)
+            else -> listingRepository.findActiveByListingType(listingType.name)
+        }
+        val listings = flow.map { listing ->
             val carModel = carModelRepository.findById(listing.carModelId)?.toDomain()
             listing.toDomain(carModel)
         }.toList()
@@ -185,8 +286,14 @@ class CarListingService(
                 }
             }
             ListingType.RENT -> {
-                if (request.rentPricePerDay.isNullOrBlank()) {
-                    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Le prix de location journalier est obligatoire.")
+                if (request.rentPricePerDay.isNullOrBlank() &&
+                    request.rentPricePerWeek.isNullOrBlank() &&
+                    request.rentPricePerMonth.isNullOrBlank()
+                ) {
+                    throw ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Au moins un tarif de location (jour, semaine ou mois) est obligatoire.",
+                    )
                 }
             }
             ListingType.EXCHANGE -> {
@@ -195,8 +302,6 @@ class CarListingService(
                 }
             }
         }
-        if (request.condition == ItemCondition.USED && request.mileageKm <= 0) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Indiquez le kilométrage pour un véhicule d'occasion.")
-        }
+        // Année et kilométrage sont facultatifs (CDC)
     }
 }

@@ -6,12 +6,15 @@ import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import t3digitalgroup.vehnixauto.server.app.car.domain.models.request.AssignDriverRequest
 import t3digitalgroup.vehnixauto.server.app.moto.domain.models.MotoListing
+import t3digitalgroup.vehnixauto.server.app.moto.domain.models.request.MotoListingAdminUpdateRequest
 import t3digitalgroup.vehnixauto.server.app.moto.domain.models.request.MotoListingRequest
 import t3digitalgroup.vehnixauto.server.app.moto.infrastructure.mapper.toDomain
 import t3digitalgroup.vehnixauto.server.app.moto.infrastructure.mapper.toEntity
 import t3digitalgroup.vehnixauto.server.app.moto.infrastructure.repositories.MotoListingRepository
 import t3digitalgroup.vehnixauto.server.app.moto.infrastructure.repositories.MotoModelRepository
+import t3digitalgroup.vehnixauto.server.app.user.infrastructure.repositories.UserRepository
 import t3digitalgroup.vehnixauto.server.utils.*
 import java.time.LocalDateTime
 
@@ -22,12 +25,17 @@ class MotoListingService(
     private val motoModelRepository: MotoModelRepository,
     private val motoImageService: MotoImageService,
     private val motoDocumentService: MotoDocumentService,
+    private val userRepository: UserRepository,
 ) {
     suspend fun create(request: MotoListingRequest): MotoListing {
         validateListingRequest(request)
         validateGeoCoordinates(request.latitude, request.longitude)
         val motoModel = motoModelRepository.findById(request.motoModelId)
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Modèle de moto introuvable.")
+        request.driverUserId?.let { driverId ->
+            userRepository.findById(driverId)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Chauffeur introuvable.")
+        }
 
         val entity = MotoListing(
             userId = request.userId,
@@ -41,7 +49,15 @@ class MotoListingService(
             color = request.color,
             engineCc = request.engineCc,
             price = request.price,
+            devise = request.devise,
+            numberVin = request.numberVin,
             rentPricePerDay = request.rentPricePerDay,
+            rentPricePerWeek = request.rentPricePerWeek,
+            rentPricePerMonth = request.rentPricePerMonth,
+            transmission = request.transmission?.name,
+            withDriver = request.withDriver || request.driverUserId != null,
+            driverUserId = request.driverUserId,
+            rentalAvailable = request.rentalAvailable,
             exchangeDescription = request.exchangeDescription,
             description = request.description,
             city = request.city,
@@ -61,6 +77,87 @@ class MotoListingService(
             includeDocuments = !request.documentIds.isNullOrEmpty(),
         ).first()
     }
+
+    suspend fun adminUpdate(listingId: Long, request: MotoListingAdminUpdateRequest): MotoListing {
+        val entity = listingRepository.findById(listingId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        request.motoModelId?.let { modelId ->
+            motoModelRepository.findById(modelId)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Modèle de moto introuvable.")
+            entity.motoModelId = modelId
+        }
+        if (request.clearYear) entity.year = null else request.year?.let { entity.year = it }
+        request.isElectric?.let { entity.isElectric = it }
+        if (request.clearMileage) entity.mileageKm = null else request.mileageKm?.let { entity.mileageKm = it }
+        request.condition?.let { entity.condition = it.name }
+        request.plateNumber?.let { entity.plateNumber = it }
+        request.color?.let { entity.color = it }
+        request.engineCc?.let { entity.engineCc = it }
+        request.price?.let { entity.price = it }
+        request.devise?.let { entity.deviseId = it }
+        request.numberVin?.let { entity.numberVin = it }
+        request.rentPricePerDay?.let { entity.rentPricePerDay = it }
+        request.rentPricePerWeek?.let { entity.rentPricePerWeek = it }
+        request.rentPricePerMonth?.let { entity.rentPricePerMonth = it }
+        request.transmission?.let { entity.transmission = it.name }
+        request.withDriver?.let { entity.withDriver = it }
+        if (request.clearDriver) {
+            entity.driverUserId = null
+            entity.withDriver = false
+        } else {
+            request.driverUserId?.let { driverId ->
+                userRepository.findById(driverId)
+                    ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Chauffeur introuvable.")
+                entity.driverUserId = driverId
+                entity.withDriver = true
+            }
+        }
+        request.rentalAvailable?.let { entity.rentalAvailable = it }
+        request.exchangeDescription?.let { entity.exchangeDescription = it }
+        request.description?.let { entity.description = it }
+        request.city?.let { entity.city = it }
+        request.country?.let { entity.country = it }
+        if (request.latitude != null || request.longitude != null) {
+            validateGeoCoordinates(request.latitude ?: entity.latitude, request.longitude ?: entity.longitude)
+            request.latitude?.let { entity.latitude = it }
+            request.longitude?.let { entity.longitude = it }
+        }
+        request.status?.let { entity.status = it.name }
+        entity.updatedAt = LocalDateTime.now()
+        val saved = listingRepository.save(entity)
+        request.documentIds?.let { ids -> carDocumentOrLink(listingId, ids) }
+        val motoModel = motoModelRepository.findById(saved.motoModelId)?.toDomain()
+        return enrichListings(listOf(saved.toDomain(motoModel)), includeDocuments = true).first()
+    }
+
+    private suspend fun carDocumentOrLink(listingId: Long, ids: List<Long>) {
+        motoDocumentService.linkDocuments(listingId, ids)
+    }
+
+    suspend fun assignDriver(listingId: Long, request: AssignDriverRequest): MotoListing {
+        val entity = listingRepository.findById(listingId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce introuvable.")
+        if (entity.listingType != ListingType.RENT.name) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Le chauffeur ne s'applique qu'aux annonces de location.")
+        }
+        if (request.driverUserId == null) {
+            entity.driverUserId = null
+            entity.withDriver = request.withDriver
+        } else {
+            userRepository.findById(request.driverUserId)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Chauffeur introuvable.")
+            entity.driverUserId = request.driverUserId
+            entity.withDriver = true
+        }
+        entity.updatedAt = LocalDateTime.now()
+        val saved = listingRepository.save(entity)
+        val motoModel = motoModelRepository.findById(saved.motoModelId)?.toDomain()
+        return enrichListings(listOf(saved.toDomain(motoModel)), includeDocuments = false).first()
+    }
+
+    suspend fun markSold(listingId: Long): MotoListing = updateStatus(listingId, ListingStatus.SOLD)
+
+    suspend fun markNegotiating(listingId: Long): MotoListing = updateStatus(listingId, ListingStatus.NEGOTIATING)
 
     suspend fun findById(
         id: Long,
@@ -84,8 +181,18 @@ class MotoListingService(
         return enrichListings(listings, includeDocuments)
     }
 
-    suspend fun findByListingType(listingType: ListingType, includeDocuments: Boolean = false): List<MotoListing> {
-        val listings = listingRepository.findActiveByListingType(listingType.name).map { listing ->
+    suspend fun findByListingType(
+        listingType: ListingType,
+        includeDocuments: Boolean = false,
+        status: ListingStatus? = null,
+        includeSoldHistory: Boolean = false,
+    ): List<MotoListing> {
+        val flow = when {
+            status != null -> listingRepository.findByListingTypeAndStatus(listingType.name, status.name)
+            includeSoldHistory -> listingRepository.findPublicByListingType(listingType.name)
+            else -> listingRepository.findActiveByListingType(listingType.name)
+        }
+        val listings = flow.map { listing ->
             val motoModel = motoModelRepository.findById(listing.motoModelId)?.toDomain()
             listing.toDomain(motoModel)
         }.toList()
@@ -174,8 +281,14 @@ class MotoListingService(
                 }
             }
             ListingType.RENT -> {
-                if (request.rentPricePerDay.isNullOrBlank()) {
-                    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Le prix de location journalier est obligatoire.")
+                if (request.rentPricePerDay.isNullOrBlank() &&
+                    request.rentPricePerWeek.isNullOrBlank() &&
+                    request.rentPricePerMonth.isNullOrBlank()
+                ) {
+                    throw ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Au moins un tarif de location (jour, semaine ou mois) est obligatoire.",
+                    )
                 }
             }
             ListingType.EXCHANGE -> {
@@ -183,9 +296,6 @@ class MotoListingService(
                     throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Décrivez la moto ou la pièce souhaitée en échange.")
                 }
             }
-        }
-        if (request.condition == ItemCondition.USED && request.mileageKm <= 0) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Indiquez le kilométrage pour une moto d'occasion.")
         }
     }
 }

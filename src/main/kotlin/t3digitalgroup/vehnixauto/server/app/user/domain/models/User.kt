@@ -46,15 +46,16 @@ data class UserDto(
 )
 
 data class UserRequest(
-    @field:NotBlank(message = "L'email est obligatoire")
+    /** Email facultatif si un téléphone est fourni. */
     val email : String? = null,
     @NotNull(message = "Le mot de passe est obligatoire")
     @field:NotBlank(message = "Le mot de passe est obligatoire")
-    @field:Size(min = 6, message = "Le mot de passe doit contenir au moins 8 caractères")
+    @field:Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     val password : String,
     @NotNull
     val confirmPassword: String,
     val pseudo : String? = null,
+    /** Téléphone facultatif si un email est fourni. Au moins email OU téléphone requis. */
     val phone : String? = null,
     @NotNull
     val city : String,
